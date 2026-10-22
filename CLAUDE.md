@@ -15,6 +15,12 @@ zustand, zod, Monaco, react-resizable-panels. Tests: Vitest + Testing Library, P
 - `npm run test:e2e`: build and run the Electron smoke tests
 - `npm run format`: Prettier
 
+## Claude Code setup
+
+`.claude/settings.json` (shared with the team) pre-approves the project's check, test, lint and read-only git commands,
+and runs `.claude/hooks/lint-edited-file.sh` after every edit: Prettier formats the file, then ESLint checks it. Any
+violation of the coding rules is reported straight back, so fix it before moving on. Review or disable it with `/hooks`.
+
 ## Layout
 
 - `src/main`: Electron main process (window, IPC handlers). Protocol clients will live here.
