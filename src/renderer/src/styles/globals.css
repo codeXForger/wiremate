@@ -1,0 +1,122 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * WireMate palette: a patch-bay. Neutral slate chrome, a brass accent for actions,
+ * and one "wire" colour per protocol so a request is recognisable at a glance.
+ */
+:root {
+  --background: #eef1f5;
+  --panel: #ffffff;
+  --surface: #f5f7fa;
+  --border: #d6dbe4;
+  --foreground: #1d2230;
+  --muted-foreground: #5e6678;
+  --primary: #a8741c;
+  --primary-foreground: #ffffff;
+  --destructive: #c24141;
+  --success: #2f8f5b;
+  --ring: #a8741c;
+
+  --wire-http: #2f7fd6;
+  --wire-graphql: #c2408a;
+  --wire-websocket: #1f9c87;
+  --wire-socketio: #6b67d6;
+  --wire-tcp: #c27428;
+  --wire-udp: #a8941c;
+  --wire-rabbitmq: #d4582c;
+  --wire-kafka: #5d6880;
+  --wire-mqtt: #c94a63;
+  --wire-mcp: #3f9c3a;
+}
+
+.dark {
+  --background: #161a23;
+  --panel: #1b2030;
+  --surface: #222838;
+  --border: #2c3346;
+  --foreground: #d6dce8;
+  --muted-foreground: #8a93a8;
+  --primary: #d4a046;
+  --primary-foreground: #1a1408;
+  --destructive: #e06a6a;
+  --success: #5cc48a;
+  --ring: #d4a046;
+
+  --wire-http: #4f9cf0;
+  --wire-graphql: #e05aa6;
+  --wire-websocket: #3fbfa8;
+  --wire-socketio: #8f8cf2;
+  --wire-tcp: #e0954a;
+  --wire-udp: #d6c24a;
+  --wire-rabbitmq: #f07a4f;
+  --wire-kafka: #9aa5b8;
+  --wire-mqtt: #ef6f86;
+  --wire-mcp: #6fcf6a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-ring: var(--ring);
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
+
+@utility drag-region {
+  -webkit-app-region: drag;
+}
+
+@utility no-drag {
+  -webkit-app-region: no-drag;
+}
