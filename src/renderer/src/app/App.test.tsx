@@ -33,6 +33,11 @@ describe('App shell', () => {
     await goTo(user, 'Network')
     expect(screen.getByRole('button', { name: 'New TCP request' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New UDP request' })).toBeInTheDocument()
+    await goTo(user, 'GraphQL')
+    expect(screen.getByRole('button', { name: 'New GraphQL request' })).toBeInTheDocument()
+    expect(screen.getByRole('tree', { name: 'GraphQL collections' })).toHaveTextContent('Countries')
+    await goTo(user, 'API')
+    expect(screen.queryByRole('button', { name: 'New GraphQL request' })).not.toBeInTheDocument()
   })
 
   it('switches to utility views', async () => {
@@ -53,10 +58,11 @@ describe('App shell', () => {
 
   it('asks which protocol to use when a section has several', async () => {
     const { user } = await renderApp()
+    await goTo(user, 'Network')
     await user.click(within(screen.getByRole('main')).getByRole('button', { name: /New request/ }))
-    const dialog = await screen.findByRole('dialog', { name: 'New API request' })
-    expect(within(dialog).getByRole('button', { name: /^HTTP/ })).toBeInTheDocument()
-    expect(within(dialog).getByRole('button', { name: /^GraphQL/ })).toBeInTheDocument()
+    const dialog = await screen.findByRole('dialog', { name: 'New Network request' })
+    expect(within(dialog).getByRole('button', { name: /^TCP/ })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: /^UDP/ })).toBeInTheDocument()
     expect(within(dialog).queryByRole('button', { name: /^Kafka/ })).not.toBeInTheDocument()
   })
 
@@ -71,8 +77,6 @@ describe('App shell', () => {
   it('handles keyboard shortcuts for new, save and close', async () => {
     const { user } = await renderApp()
     fireEvent.keyDown(window, { key: 'n', metaKey: true })
-    const dialog = await screen.findByRole('dialog')
-    await user.click(within(dialog).getByRole('button', { name: /^HTTP/ }))
     await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '/x')
     expect(useTabStore.getState().dirtyIds).toHaveLength(1)
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
@@ -90,6 +94,7 @@ describe('App shell', () => {
     const { user } = await renderApp()
     await goTo(user, 'Settings')
     fireEvent.keyDown(window, { key: 'n', metaKey: true })
-    expect(await screen.findByRole('dialog', { name: 'New API request' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /HTTP request/ })).toBeInTheDocument()
   })
 })

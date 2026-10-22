@@ -1,6 +1,6 @@
 import type { ProtocolId } from '../types/protocol'
 
-export const CATEGORY_IDS = ['api', 'realtime', 'mcp', 'mqtt', 'kafka', 'pubsub', 'network'] as const
+export const CATEGORY_IDS = ['api', 'graphql', 'realtime', 'mcp', 'mqtt', 'kafka', 'pubsub', 'network'] as const
 
 export type CategoryId = (typeof CATEGORY_IDS)[number]
 
@@ -12,7 +12,8 @@ export interface CategoryMetadata {
 
 /** Groups protocols into the sections of the navigation rail. Every protocol belongs to exactly one category. */
 export const CATEGORIES: Record<CategoryId, CategoryMetadata> = {
-  api: { label: 'API', description: 'REST and GraphQL endpoints', protocols: ['http', 'graphql'] },
+  api: { label: 'API', description: 'REST and HTTP endpoints', protocols: ['http'] },
+  graphql: { label: 'GraphQL', description: 'Queries, mutations and subscriptions', protocols: ['graphql'] },
   realtime: {
     label: 'Realtime',
     description: 'WebSocket and Socket.IO connections',

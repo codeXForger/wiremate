@@ -1,9 +1,20 @@
-import { ArrowLeftRight, Bot, Globe, Inbox, Layers, Network, RadioTower, type LucideIcon } from 'lucide-react'
+import {
+  ArrowLeftRight,
+  Bot,
+  Globe,
+  Inbox,
+  Layers,
+  Network,
+  RadioTower,
+  Waypoints,
+  type LucideIcon
+} from 'lucide-react'
 import { CATEGORIES, type CategoryId } from '@shared/protocols/categories'
 import { wireColor } from '@/components/wire'
 
 export const CATEGORY_ICONS: Record<CategoryId, LucideIcon> = {
   api: Globe,
+  graphql: Waypoints,
   realtime: ArrowLeftRight,
   mcp: Bot,
   mqtt: RadioTower,

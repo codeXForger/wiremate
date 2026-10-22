@@ -67,7 +67,7 @@ describe('HTTP editor', () => {
 describe('GraphQL editor', () => {
   it('edits query and variables and sends', async () => {
     const { user } = await renderApp()
-    await openRequest(user, 'API', /Countries/)
+    await openRequest(user, 'GraphQL', /Countries/)
     await user.clear(screen.getByRole('textbox', { name: 'Variables' }))
     await user.type(screen.getByRole('textbox', { name: 'Variables' }), '1')
     await user.type(screen.getByRole('textbox', { name: 'Query' }), '#')

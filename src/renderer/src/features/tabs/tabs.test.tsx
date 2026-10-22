@@ -6,7 +6,7 @@ describe('TabBar', () => {
   it('switches with the keyboard and closes tabs', async () => {
     const { user } = await renderApp()
     await openRequest(user, 'API', /List users/)
-    await openRequest(user, 'API', /Countries/)
+    await openRequest(user, 'GraphQL', /Countries/)
     const first = screen.getByRole('tab', { name: /List users/ })
     first.focus()
     await user.keyboard('{Enter}')

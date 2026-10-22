@@ -23,10 +23,10 @@ describe('Collections tree', () => {
 
   it('opens a request in a tab and marks it active', async () => {
     const { user } = await renderApp()
-    const item = screen.getByRole('treeitem', { name: /Countries/ })
+    const item = screen.getByRole('treeitem', { name: /List users/ })
     await user.click(item)
     expect(item).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByRole('tab', { name: /Countries/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /List users/ })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('creates collections that belong to the current section', async () => {
@@ -44,12 +44,13 @@ describe('Collections tree', () => {
 
   it('offers only the section protocols when adding to a collection', async () => {
     const { user } = await renderApp()
-    await openMenu(/List users/)
+    await goTo(user, 'Network')
+    await openMenu(/Echo server/)
     await user.click(screen.getByRole('menuitem', { name: /New request/ }))
     expect(screen.queryByRole('button', { name: /^Kafka/ })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /^GraphQL/ }))
-    const created = useWorkspaceStore.getState().nodes.find((n) => n.name === 'GraphQL request')
-    expect(created?.parentId).toBe('f_api')
+    await user.click(screen.getByRole('button', { name: /^UDP/ }))
+    const created = useWorkspaceStore.getState().nodes.find((n) => n.name === 'UDP request')
+    expect(created?.parentId).toBe('f_net')
   })
 
   it('adds a request straight away in a single-protocol section', async () => {
@@ -63,7 +64,7 @@ describe('Collections tree', () => {
 
   it('renames with Enter and cancels with Escape', async () => {
     const { user } = await renderApp()
-    await openMenu(/Countries/)
+    await openMenu(/List users/)
     await user.click(screen.getByRole('menuitem', { name: /Rename/ }))
     const input = screen.getByRole('textbox', { name: 'Name' })
     await user.clear(input)
@@ -77,11 +78,11 @@ describe('Collections tree', () => {
 
   it('ignores blank names on blur', async () => {
     const { user } = await renderApp()
-    await openMenu(/Countries/)
+    await openMenu(/List users/)
     await user.click(screen.getByRole('menuitem', { name: /Rename/ }))
     await user.clear(screen.getByRole('textbox', { name: 'Name' }))
     fireEvent.blur(screen.getByRole('textbox', { name: 'Name' }))
-    expect(screen.getByRole('treeitem', { name: /Countries/ })).toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: /List users/ })).toBeInTheDocument()
   })
 
   it('deletes a collection and closes tabs for removed requests', async () => {

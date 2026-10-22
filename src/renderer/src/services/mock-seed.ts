@@ -12,15 +12,8 @@ interface SeedCollection {
 }
 
 const COLLECTIONS: SeedCollection[] = [
-  {
-    id: 'f_api',
-    name: 'Public APIs',
-    category: 'api',
-    requests: [
-      ['http', 'List users'],
-      ['graphql', 'Countries']
-    ]
-  },
+  { id: 'f_api', name: 'Public APIs', category: 'api', requests: [['http', 'List users']] },
+  { id: 'f_graphql', name: 'Public GraphQL', category: 'graphql', requests: [['graphql', 'Countries']] },
   { id: 'f_realtime', name: 'Chat', category: 'realtime', requests: [['websocket', 'Echo socket']] },
   { id: 'f_ai', name: 'AI tools', category: 'mcp', requests: [['mcp', 'Everything server']] },
   { id: 'f_iot', name: 'Home sensors', category: 'mqtt', requests: [['mqtt', 'Sensor telemetry']] },
