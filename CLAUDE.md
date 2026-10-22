@@ -1,6 +1,6 @@
 # WireMate
 
-Desktop app for testing HTTP/REST, GraphQL, WebSocket, Socket.IO, TCP, UDP, RabbitMQ, Kafka and MCP endpoints.
+Desktop app for testing HTTP/REST, GraphQL, WebSocket, Socket.IO, TCP, UDP, RabbitMQ, Kafka, MQTT and MCP endpoints.
 There is no database: workspaces are folders on disk chosen by the user. GitHub / Google Drive sync comes later.
 
 ## Stack
@@ -34,6 +34,13 @@ Read `docs/CODING_RULES.md`. In short: strict TS with no `any`; **functions and 
 complexity ≤ 8; ≤ 3 params; no duplication (`jscpd`); classes with explicit `public` / `private` / `static`;
 SOLID plus the existing patterns (registry, repository, factory, spec builder); coverage ≥ 85%; conventional commits;
 one branch per feature.
+
+## Navigation
+
+The left rail lists **sections** (`src/shared/protocols/categories.ts`): API, Realtime, MCP, MQTT, Kafka, Pub/Sub and
+Network, with Env, History and Settings at the bottom. Selecting a section opens its own pane: a header, a menu with one
+"New … request" entry per protocol, and that section's collections. A collection (folder) stores its `category`;
+requests take theirs from their protocol. To add a protocol to a section, list it in `CATEGORIES`.
 
 ## Conventions
 

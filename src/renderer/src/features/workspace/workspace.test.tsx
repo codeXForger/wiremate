@@ -35,7 +35,7 @@ describe('workspaces', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Create workspace' }))
     expect(await screen.findByText('/work/payments')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByText(/No requests yet/)).toBeInTheDocument()
+    expect(screen.getByText(/No collections yet/)).toBeInTheDocument()
   })
 
   it('keeps the typed folder when the picker is cancelled', async () => {

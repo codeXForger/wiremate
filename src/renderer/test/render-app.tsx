@@ -6,6 +6,8 @@ import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
+export type User = ReturnType<typeof userEvent.setup>
+
 export function resetStores(): void {
   useWorkspaceStore.setState(useWorkspaceStore.getInitialState(), true)
   useTabStore.setState(useTabStore.getInitialState(), true)
@@ -21,14 +23,20 @@ export async function renderApp() {
   return { user, ...utils }
 }
 
-export async function openRequest(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+/** Opens a section from the navigation rail, e.g. "Realtime" or "Network". */
+export async function goTo(user: User, section: string) {
+  await user.click(within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name: section }))
+}
+
+export async function openRequest(user: User, section: string, name: RegExp) {
+  await goTo(user, section)
   await user.click(screen.getByRole('treeitem', { name }))
   return screen.getByRole('region', { name: /request$/ })
 }
 
-export async function createRequest(user: ReturnType<typeof userEvent.setup>, label: RegExp) {
-  await user.click(screen.getAllByRole('button', { name: 'New request' })[0]!)
-  const dialog = await screen.findByRole('dialog')
-  await user.click(within(dialog).getByRole('button', { name: label }))
+/** Uses the section's own menu ("New HTTP request", "New Kafka request"…). */
+export async function createRequest(user: User, section: string, protocol: string) {
+  await goTo(user, section)
+  await user.click(screen.getByRole('button', { name: `New ${protocol} request` }))
   return screen.getByRole('region', { name: /request$/ })
 }

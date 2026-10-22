@@ -6,7 +6,7 @@ import { renderApp } from '../../../test/render-app'
 describe('environments', () => {
   it('edits variables of the active environment', async () => {
     const { user } = await renderApp()
-    await user.click(screen.getByRole('button', { name: 'Environments' }))
+    await user.click(screen.getByRole('button', { name: 'Env' }))
     expect(screen.getByText(/Variables in Local/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Add variable' }))
     await user.type(screen.getAllByRole('textbox', { name: 'Key' }).at(-1)!, 'token')
@@ -15,7 +15,7 @@ describe('environments', () => {
 
   it('adds an environment and can deselect all', async () => {
     const { user } = await renderApp()
-    await user.click(screen.getByRole('button', { name: 'Environments' }))
+    await user.click(screen.getByRole('button', { name: 'Env' }))
     await user.click(screen.getByRole('button', { name: 'New environment' }))
     expect(screen.getByText(/Variables in Environment 3/)).toBeInTheDocument()
     await user.click(screen.getByRole('combobox', { name: 'Environment' }))

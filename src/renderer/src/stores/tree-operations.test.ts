@@ -12,14 +12,15 @@ const empty: TreeData = { nodes: [], requests: {} }
 
 describe('tree operations', () => {
   it('inserts folders with unique names', () => {
-    const first = insertFolder(empty, null)
-    const second = insertFolder(first.patch, null)
-    expect(second.patch.nodes.map((n) => n.name)).toEqual(['New folder', 'New folder 2'])
+    const first = insertFolder(empty, null, 'api')
+    const second = insertFolder(first.patch, null, 'api')
+    expect(second.patch.nodes[1]!.category).toBe('api')
+    expect(second.patch.nodes.map((n) => n.name)).toEqual(['New collection', 'New collection 2'])
     expect(second.id).toMatch(/^fld_/)
   })
 
   it('inserts requests as nodes and documents', () => {
-    const folder = insertFolder(empty, null)
+    const folder = insertFolder(empty, null, 'api')
     const { id, patch } = insertRequest(folder.patch, folder.id, 'kafka')
     expect(patch.nodes.find((n) => n.id === id)).toMatchObject({
       parentId: folder.id,
@@ -30,7 +31,7 @@ describe('tree operations', () => {
   })
 
   it('renames nodes and their request documents', () => {
-    const folder = insertFolder(empty, null)
+    const folder = insertFolder(empty, null, 'api')
     const renamedFolder = renameInTree(folder.patch, folder.id, 'APIs')
     expect(renamedFolder.nodes[0]!.name).toBe('APIs')
     const req = insertRequest(empty, null, 'http')
@@ -38,7 +39,7 @@ describe('tree operations', () => {
   })
 
   it('removes a folder with everything inside it', () => {
-    const folder = insertFolder(empty, null)
+    const folder = insertFolder(empty, null, 'api')
     const req = insertRequest(folder.patch, folder.id, 'http')
     const result = removeFromTree(req.patch, folder.id)
     expect(result).toEqual({ nodes: [], requests: {} })

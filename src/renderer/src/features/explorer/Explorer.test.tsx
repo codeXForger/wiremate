@@ -1,15 +1,15 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { renderApp } from '../../../test/render-app'
+import { goTo, renderApp } from '../../../test/render-app'
 
 async function openMenu(name: RegExp) {
   fireEvent.contextMenu(screen.getByRole('treeitem', { name }))
   return screen.findByRole('menu')
 }
 
-describe('Explorer', () => {
-  it('collapses and expands folders', async () => {
+describe('Collections tree', () => {
+  it('collapses and expands collections', async () => {
     const { user } = await renderApp()
     const folder = screen.getByRole('treeitem', { name: /Public APIs/ })
     expect(folder).toHaveAttribute('aria-expanded', 'true')
@@ -29,22 +29,36 @@ describe('Explorer', () => {
     expect(screen.getByRole('tab', { name: /Countries/ })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('creates folders from the header and the context menu', async () => {
+  it('creates collections that belong to the current section', async () => {
     const { user } = await renderApp()
-    await user.click(screen.getByRole('button', { name: 'New folder' }))
-    expect(screen.getByRole('treeitem', { name: /^New folder$/ })).toBeInTheDocument()
-    await user.click(await openMenu(/Realtime/).then(() => screen.getByRole('menuitem', { name: /New folder/ })))
-    const nested = useWorkspaceStore.getState().nodes.filter((n) => n.parentId === 'f_realtime' && n.kind === 'folder')
-    expect(nested).toHaveLength(1)
+    await goTo(user, 'Kafka')
+    await user.click(screen.getByRole('button', { name: 'New collection' }))
+    expect(screen.getByRole('treeitem', { name: /^New collection$/ })).toBeInTheDocument()
+    await goTo(user, 'API')
+    expect(screen.queryByRole('treeitem', { name: /^New collection$/ })).not.toBeInTheDocument()
+    await openMenu(/Public APIs/)
+    await user.click(screen.getByRole('menuitem', { name: /New folder/ }))
+    const nested = useWorkspaceStore.getState().nodes.find((n) => n.parentId === 'f_api' && n.kind === 'folder')
+    expect(nested?.category).toBe('api')
   })
 
-  it('creates a request inside the folder chosen from the context menu', async () => {
+  it('offers only the section protocols when adding to a collection', async () => {
     const { user } = await renderApp()
     await openMenu(/List users/)
     await user.click(screen.getByRole('menuitem', { name: /New request/ }))
-    await user.click(screen.getByRole('button', { name: /^Kafka/ }))
-    const created = useWorkspaceStore.getState().nodes.find((n) => n.protocol === 'kafka' && n.parentId === 'f_api')
-    expect(created?.name).toBe('Kafka request')
+    expect(screen.queryByRole('button', { name: /^Kafka/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^GraphQL/ }))
+    const created = useWorkspaceStore.getState().nodes.find((n) => n.name === 'GraphQL request')
+    expect(created?.parentId).toBe('f_api')
+  })
+
+  it('adds a request straight away in a single-protocol section', async () => {
+    const { user } = await renderApp()
+    await goTo(user, 'MQTT')
+    await openMenu(/Home sensors/)
+    await user.click(screen.getByRole('menuitem', { name: /New request/ }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('treeitem', { name: /MQTT request/ })).toBeInTheDocument()
   })
 
   it('renames with Enter and cancels with Escape', async () => {
@@ -70,19 +84,15 @@ describe('Explorer', () => {
     expect(screen.getByRole('treeitem', { name: /Countries/ })).toBeInTheDocument()
   })
 
-  it('deletes a folder and closes tabs for removed requests', async () => {
+  it('deletes a collection and closes tabs for removed requests', async () => {
     const { user } = await renderApp()
+    await goTo(user, 'Realtime')
     await user.click(screen.getByRole('treeitem', { name: /Echo socket/ }))
     expect(screen.getByRole('tab', { name: /Echo socket/ })).toBeInTheDocument()
-    await openMenu(/Realtime/)
+    await openMenu(/Chat/)
     await user.click(screen.getByRole('menuitem', { name: /Delete/ }))
-    expect(screen.queryByRole('treeitem', { name: /Realtime/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('treeitem', { name: /Chat/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: /Echo socket/ })).not.toBeInTheDocument()
-  })
-
-  it('shows an empty state for a workspace without requests', async () => {
-    await renderApp()
-    useWorkspaceStore.setState({ nodes: [], requests: {} })
-    expect(await screen.findByText(/No requests yet/)).toBeInTheDocument()
+    expect(screen.getByText(/No collections yet/)).toBeInTheDocument()
   })
 })

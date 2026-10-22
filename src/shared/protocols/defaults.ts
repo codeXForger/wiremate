@@ -44,6 +44,14 @@ export const PROTOCOL_DEFAULTS: DefaultBuilders = {
     message: ''
   }),
   kafka: () => ({ brokers: 'localhost:9092', topic: '', groupId: 'wiremate', key: '', value: '' }),
+  mqtt: () => ({
+    brokerUrl: 'mqtt://localhost:1883',
+    clientId: 'wiremate',
+    topic: 'sensors/#',
+    qos: '0',
+    retain: false,
+    payload: ''
+  }),
   mcp: () => ({
     mode: 'client',
     transport: 'stdio',

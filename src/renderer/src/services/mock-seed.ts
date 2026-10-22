@@ -1,53 +1,60 @@
+import type { CategoryId } from '@shared/protocols/categories'
 import { RequestFactory } from '@shared/protocols/request-factory'
-import type { AnyRequest } from '@shared/types/protocol'
+import type { AnyRequest, ProtocolId } from '@shared/types/protocol'
 import type { Environment, TreeNode, WorkspaceContent } from '@shared/types/workspace'
 import { createKeyValue } from '@shared/utils/key-value'
 
-function folder(id: string, name: string, parentId: string | null = null): TreeNode {
-  return { id, parentId, kind: 'folder', name }
+interface SeedCollection {
+  id: string
+  name: string
+  category: CategoryId
+  requests: [ProtocolId, string][]
 }
 
-function requestNode(request: AnyRequest, parentId: string): TreeNode {
-  return {
-    id: request.id,
-    parentId,
+const COLLECTIONS: SeedCollection[] = [
+  {
+    id: 'f_api',
+    name: 'Public APIs',
+    category: 'api',
+    requests: [
+      ['http', 'List users'],
+      ['graphql', 'Countries']
+    ]
+  },
+  { id: 'f_realtime', name: 'Chat', category: 'realtime', requests: [['websocket', 'Echo socket']] },
+  { id: 'f_ai', name: 'AI tools', category: 'mcp', requests: [['mcp', 'Everything server']] },
+  { id: 'f_iot', name: 'Home sensors', category: 'mqtt', requests: [['mqtt', 'Sensor telemetry']] },
+  { id: 'f_orders', name: 'Orders', category: 'kafka', requests: [['kafka', 'Orders topic']] },
+  { id: 'f_events', name: 'Billing events', category: 'pubsub', requests: [['rabbitmq', 'Invoice created']] },
+  { id: 'f_net', name: 'Local services', category: 'network', requests: [['tcp', 'Echo server']] }
+]
+
+function seedCollection({ id, name, category, requests }: SeedCollection): { nodes: TreeNode[]; docs: AnyRequest[] } {
+  const docs = requests.map(([protocol, title]) => RequestFactory.create(protocol, title) as AnyRequest)
+  const folder: TreeNode = { id, parentId: null, kind: 'folder', name, category }
+  const children = docs.map((doc): TreeNode => ({
+    id: doc.id,
+    parentId: id,
     kind: 'request',
-    name: request.name,
-    protocol: request.protocol
-  }
+    name: doc.name,
+    protocol: doc.protocol
+  }))
+  return { nodes: [folder, ...children], docs }
 }
-
-function seedRequests(): AnyRequest[] {
-  return [
-    RequestFactory.create('http', 'List users'),
-    RequestFactory.create('graphql', 'Countries'),
-    RequestFactory.create('websocket', 'Echo socket'),
-    RequestFactory.create('kafka', 'Orders topic'),
-    RequestFactory.create('mcp', 'Everything server')
-  ]
-}
-
-const PARENTS = ['f_api', 'f_api', 'f_realtime', 'f_realtime', 'f_ai'] as const
 
 function seedEnvironments(): Environment[] {
   return [
-    {
-      id: 'env_local',
-      name: 'Local',
-      variables: [createKeyValue('baseUrl', 'http://localhost:3000')]
-    },
-    {
-      id: 'env_staging',
-      name: 'Staging',
-      variables: [createKeyValue('baseUrl', 'https://staging.example.com')]
-    }
+    { id: 'env_local', name: 'Local', variables: [createKeyValue('baseUrl', 'http://localhost:3000')] },
+    { id: 'env_staging', name: 'Staging', variables: [createKeyValue('baseUrl', 'https://staging.example.com')] }
   ]
 }
 
 export function createSeedContent(): WorkspaceContent {
-  const requests = seedRequests()
-  const folders = [folder('f_api', 'Public APIs'), folder('f_realtime', 'Realtime'), folder('f_ai', 'AI tools')]
-  const nodes = [...folders, ...requests.map((req, i) => requestNode(req, PARENTS[i] ?? 'f_api'))]
-  const byId = Object.fromEntries(requests.map((request) => [request.id, request]))
-  return { nodes, requests: byId, environments: seedEnvironments() }
+  const seeded = COLLECTIONS.map(seedCollection)
+  const docs = seeded.flatMap((entry) => entry.docs)
+  return {
+    nodes: seeded.flatMap((entry) => entry.nodes),
+    requests: Object.fromEntries(docs.map((doc) => [doc.id, doc])),
+    environments: seedEnvironments()
+  }
 }

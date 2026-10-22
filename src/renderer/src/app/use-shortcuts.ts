@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
+import { currentCategory, startNewRequest } from '@/features/request/new-request'
 import { useTabStore } from '@/stores/tab-store'
-import { useUiStore } from '@/stores/ui-store'
 
 type ShortcutHandler = () => void
 
 const SHORTCUTS: Record<string, ShortcutHandler> = {
-  n: () => useUiStore.getState().openDialog({ type: 'new-request', parentId: null }),
+  n: () => startNewRequest(null, currentCategory()),
   s: () => {
     const { activeId, markClean } = useTabStore.getState()
     if (activeId) markClean(activeId)

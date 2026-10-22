@@ -1,8 +1,11 @@
 import { create } from 'zustand'
+import type { CategoryId } from '@shared/protocols/categories'
 
-export type SidebarView = 'explorer' | 'environments' | 'history' | 'settings'
+export type UtilityView = 'environments' | 'history' | 'settings'
+export type SidebarView = CategoryId | UtilityView
 export type Theme = 'dark' | 'light'
-export type DialogState = { type: 'create-workspace' } | { type: 'new-request'; parentId: string | null } | null
+export type DialogState =
+  { type: 'create-workspace' } | { type: 'new-request'; parentId: string | null; category: CategoryId } | null
 
 interface UiState {
   view: SidebarView
@@ -15,7 +18,7 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>()((set) => ({
-  view: 'explorer',
+  view: 'api',
   theme: 'dark',
   dialog: null,
   setView: (view) => set({ view }),

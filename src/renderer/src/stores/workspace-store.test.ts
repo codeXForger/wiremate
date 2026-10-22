@@ -14,7 +14,7 @@ describe('workspace store', () => {
     await store.getState().openWorkspace('ws_demo')
     const state = store.getState()
     expect(state.activeWorkspaceId).toBe('ws_demo')
-    expect(Object.keys(state.requests)).toHaveLength(5)
+    expect(Object.keys(state.requests)).toHaveLength(8)
     expect(state.activeEnvironmentId).toBe('env_local')
   })
 
@@ -29,7 +29,7 @@ describe('workspace store', () => {
 
   it('edits the tree through its actions', () => {
     const store = setup()
-    const folderId = store.getState().addFolder(null)
+    const folderId = store.getState().addFolder(null, 'api')
     const requestId = store.getState().addRequest(folderId, 'graphql')
     store.getState().renameNode(requestId, 'Countries')
     store.getState().updateConfig<'graphql'>(requestId, { url: 'https://api.dev/graphql' })

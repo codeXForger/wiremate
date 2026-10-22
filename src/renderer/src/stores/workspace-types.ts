@@ -1,3 +1,4 @@
+import type { CategoryId } from '@shared/protocols/categories'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
 import type { Environment, TreeNode, Workspace } from '@shared/types/workspace'
 import type { CreateWorkspaceInput } from '@/services/workspace-repository'
@@ -13,7 +14,7 @@ export interface WorkspaceSlice {
 export interface TreeSlice {
   nodes: TreeNode[]
   requests: Record<string, AnyRequest>
-  addFolder: (parentId: string | null) => string
+  addFolder: (parentId: string | null, category: CategoryId) => string
   addRequest: (parentId: string | null, protocol: ProtocolId) => string
   renameNode: (id: string, name: string) => void
   removeNode: (id: string) => void

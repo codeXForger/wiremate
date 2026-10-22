@@ -43,6 +43,7 @@ export const PROTOCOL_METADATA: Record<ProtocolId, ProtocolMetadata> = {
     description: 'Produce and consume topics',
     style: 'stream'
   },
+  mqtt: { label: 'MQTT', short: 'MQTT', description: 'Publish and subscribe to MQTT topics', style: 'stream' },
   mcp: {
     label: 'MCP',
     short: 'MCP',

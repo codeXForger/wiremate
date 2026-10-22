@@ -1,3 +1,4 @@
+import type { CategoryId } from '@shared/protocols/categories'
 import { PROTOCOL_METADATA } from '@shared/protocols/metadata'
 import { RequestFactory } from '@shared/protocols/request-factory'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
@@ -17,9 +18,9 @@ function withoutKeys<T>(record: Record<string, T>, keys: Set<string>): Record<st
   return Object.fromEntries(Object.entries(record).filter(([key]) => !keys.has(key)))
 }
 
-export function insertFolder(data: TreeData, parentId: string | null): Insertion {
-  const name = uniqueName(data.nodes, parentId, 'New folder')
-  const node: TreeNode = { id: createId('fld'), parentId, kind: 'folder', name }
+export function insertFolder(data: TreeData, parentId: string | null, category: CategoryId): Insertion {
+  const name = uniqueName(data.nodes, parentId, 'New collection')
+  const node: TreeNode = { id: createId('fld'), parentId, kind: 'folder', name, category }
   return { id: node.id, patch: { ...data, nodes: [...data.nodes, node] } }
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PROTOCOL_IDS } from '../types/protocol'
+import { CATEGORIES, CATEGORY_IDS, categoryOf, isCategoryId } from './categories'
 import { PROTOCOL_METADATA } from './metadata'
 import { RequestFactory } from './request-factory'
 
@@ -22,5 +23,18 @@ describe('RequestFactory', () => {
 describe('PROTOCOL_METADATA', () => {
   it('describes every protocol', () => {
     expect(Object.keys(PROTOCOL_METADATA).sort()).toEqual([...PROTOCOL_IDS].sort())
+  })
+})
+
+describe('CATEGORIES', () => {
+  it('places every protocol in exactly one category', () => {
+    const assigned = CATEGORY_IDS.flatMap((id) => [...CATEGORIES[id].protocols])
+    expect([...assigned].sort()).toEqual([...PROTOCOL_IDS].sort())
+    PROTOCOL_IDS.forEach((protocol) => expect(CATEGORIES[categoryOf(protocol)].protocols).toContain(protocol))
+  })
+
+  it('recognises category ids', () => {
+    expect(isCategoryId('mqtt')).toBe(true)
+    expect(isCategoryId('settings')).toBe(false)
   })
 })

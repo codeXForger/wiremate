@@ -19,7 +19,7 @@ export const createTreeSlice: Creator = (set, get) => {
   return {
     nodes: [],
     requests: {},
-    addFolder: (parentId) => commit(insertFolder(get(), parentId)),
+    addFolder: (parentId, category) => commit(insertFolder(get(), parentId, category)),
     addRequest: (parentId, protocol) => commit(insertRequest(get(), parentId, protocol)),
     renameNode: (id, name) => set(renameInTree(get(), id, name)),
     removeNode: (id) => set(removeFromTree(get(), id)),

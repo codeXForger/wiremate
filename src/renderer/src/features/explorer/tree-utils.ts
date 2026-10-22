@@ -1,3 +1,4 @@
+import { categoryOf, type CategoryId } from '@shared/protocols/categories'
 import type { TreeNode } from '@shared/types/workspace'
 
 function compareNodes(a: TreeNode, b: TreeNode): number {
@@ -5,8 +6,13 @@ function compareNodes(a: TreeNode, b: TreeNode): number {
   return a.name.localeCompare(b.name)
 }
 
-export function childrenOf(nodes: TreeNode[], parentId: string | null): TreeNode[] {
-  return nodes.filter((node) => node.parentId === parentId).sort(compareNodes)
+export function nodeCategory(node: TreeNode): CategoryId {
+  return node.protocol ? categoryOf(node.protocol) : (node.category ?? 'api')
+}
+
+export function childrenOf(nodes: TreeNode[], parentId: string | null, category?: CategoryId): TreeNode[] {
+  const matches = (node: TreeNode): boolean => !category || nodeCategory(node) === category
+  return nodes.filter((node) => node.parentId === parentId && matches(node)).sort(compareNodes)
 }
 
 export function collectSubtreeIds(nodes: TreeNode[], rootId: string): Set<string> {

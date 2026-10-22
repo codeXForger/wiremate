@@ -1,3 +1,4 @@
+import type { CategoryId } from '../protocols/categories'
 import type { AnyRequest, KeyValue, ProtocolId } from './protocol'
 
 export interface Workspace {
@@ -15,6 +16,8 @@ export interface TreeNode {
   kind: TreeNodeKind
   name: string
   protocol?: ProtocolId
+  /** Set on folders; requests take their category from their protocol. */
+  category?: CategoryId
 }
 
 export interface Environment {

@@ -19,7 +19,7 @@ async function choose(user: User, label: string, option: RegExp) {
 describe('HTTP editor', () => {
   it('edits method, url, params and headers, and sends', async () => {
     const { user } = await renderApp()
-    await openRequest(user, /List users/)
+    await openRequest(user, 'API', /List users/)
     await choose(user, 'Method', /^POST$/)
     await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '?page=1')
     expect(activeConfig()).toMatchObject({ method: 'POST', url: 'https://httpbin.org/get?page=1' })
@@ -47,7 +47,7 @@ describe('HTTP editor', () => {
 
   it('edits the body and auth', async () => {
     const { user } = await renderApp()
-    await openRequest(user, /List users/)
+    await openRequest(user, 'API', /List users/)
     await user.click(screen.getByRole('tab', { name: 'Body' }))
     expect(screen.getByText('This request has no body.')).toBeInTheDocument()
     await choose(user, 'Body type', /^json$/)
@@ -67,7 +67,7 @@ describe('HTTP editor', () => {
 describe('GraphQL editor', () => {
   it('edits query and variables and sends', async () => {
     const { user } = await renderApp()
-    await openRequest(user, /Countries/)
+    await openRequest(user, 'API', /Countries/)
     await user.clear(screen.getByRole('textbox', { name: 'Variables' }))
     await user.type(screen.getByRole('textbox', { name: 'Variables' }), '1')
     await user.type(screen.getByRole('textbox', { name: 'Query' }), '#')
@@ -80,7 +80,7 @@ describe('GraphQL editor', () => {
 describe('streaming editors', () => {
   it('runs a WebSocket session', async () => {
     const { user } = await renderApp()
-    await openRequest(user, /Echo socket/)
+    await openRequest(user, 'Realtime', /Echo socket/)
     expect(screen.getByText(/Connect to start a session/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Send message/ })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Connect' }))
@@ -98,12 +98,13 @@ describe('streaming editors', () => {
   })
 
   it.each([
-    [/^Socket\.IO/, 'Event name', 'chat'],
-    [/^RabbitMQ/, 'Routing key', 'orders.created'],
-    [/^Kafka/, 'Topic', 'orders']
-  ])('binds spec fields for %s', async (protocol, field, value) => {
+    { section: 'Realtime', protocol: 'Socket.IO', field: 'Event name', value: 'chat' },
+    { section: 'Pub/Sub', protocol: 'RabbitMQ', field: 'Routing key', value: 'orders.created' },
+    { section: 'Kafka', protocol: 'Kafka', field: 'Topic', value: 'orders' },
+    { section: 'MQTT', protocol: 'MQTT', field: 'Topic', value: 'home/+/temp' }
+  ])('binds spec fields in $section for $protocol', async ({ section, protocol, field, value }) => {
     const { user } = await renderApp()
-    await createRequest(user, protocol)
+    await createRequest(user, section, protocol)
     const input = screen.getByLabelText(field)
     await user.clear(input)
     await user.type(input, value)
@@ -112,9 +113,9 @@ describe('streaming editors', () => {
     expect(screen.getByText('Connected', { exact: true })).toBeInTheDocument()
   })
 
-  it.each([/^TCP/, /^UDP/])('edits host, port and payload for %s', async (protocol) => {
+  it.each(['TCP', 'UDP'])('edits host, port and payload for %s', async (protocol) => {
     const { user } = await renderApp()
-    await createRequest(user, protocol)
+    await createRequest(user, 'Network', protocol)
     const host = screen.getByRole('textbox', { name: 'Host' })
     await user.clear(host)
     await user.type(host, 'example.com')
@@ -130,9 +131,17 @@ describe('streaming editors', () => {
     expect(screen.getByText('Connected to example.com:7 (simulated)')).toBeInTheDocument()
   })
 
+  it('sets MQTT QoS and retain', async () => {
+    const { user } = await renderApp()
+    await openRequest(user, 'MQTT', /Sensor telemetry/)
+    await choose(user, 'QoS', /Exactly once/)
+    await user.click(screen.getByRole('switch', { name: 'Retain message' }))
+    expect(activeConfig()).toMatchObject({ qos: '2', retain: true, topic: 'sensors/#' })
+  })
+
   it('switches MCP transport and mode', async () => {
     const { user } = await renderApp()
-    await openRequest(user, /Everything server/)
+    await openRequest(user, 'MCP', /Everything server/)
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Server command' }).value).toContain(
       'server-everything'
     )

@@ -8,11 +8,7 @@ export function AppDialogs() {
   return (
     <>
       <CreateWorkspaceDialog open={dialog?.type === 'create-workspace'} onClose={close} />
-      <NewRequestDialog
-        parentId={dialog?.type === 'new-request' ? dialog.parentId : null}
-        open={dialog?.type === 'new-request'}
-        onClose={close}
-      />
+      {dialog?.type === 'new-request' && <NewRequestDialog {...dialog} onClose={close} />}
     </>
   )
 }

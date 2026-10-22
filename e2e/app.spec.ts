@@ -20,8 +20,7 @@ test('opens the demo workspace with its requests', async () => {
 })
 
 test('creates an HTTP request and sends it', async () => {
-  await page.getByRole('button', { name: 'New request' }).first().click()
-  await page.getByRole('button', { name: /HTTP REST and plain HTTP/ }).click()
+  await page.getByRole('button', { name: 'New HTTP request' }).click()
   await expect(page.getByRole('tab', { name: /HTTP request/ })).toBeVisible()
   await page.getByRole('button', { name: 'Send' }).click()
   await expect(page.getByText('200 OK')).toBeVisible()
@@ -37,7 +36,15 @@ test('edits a request in the real window', async () => {
   await expect(page.getByLabel('Unsaved changes')).toBeVisible()
 })
 
+test('shows the MQTT section', async () => {
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'MQTT' }).click()
+  await page.getByRole('treeitem', { name: /Sensor telemetry/ }).click()
+  await expect(page.getByRole('switch', { name: 'Retain message' })).toBeVisible()
+  if (process.env['SCREENSHOTS']) await page.screenshot({ path: 'test-results/mqtt.png' })
+})
+
 test('connects a WebSocket session', async () => {
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'Realtime' }).click()
   await page.getByRole('treeitem', { name: /Echo socket/ }).click()
   await page.getByRole('button', { name: 'Connect' }).click()
   await expect(page.getByText('Connected', { exact: true })).toBeVisible()

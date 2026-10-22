@@ -7,6 +7,7 @@ export const PROTOCOL_IDS = [
   'udp',
   'rabbitmq',
   'kafka',
+  'mqtt',
   'mcp'
 ] as const
 
@@ -78,6 +79,18 @@ export interface KafkaConfig {
   value: string
 }
 
+export const MQTT_QOS_LEVELS = ['0', '1', '2'] as const
+export type MqttQos = (typeof MQTT_QOS_LEVELS)[number]
+
+export interface MqttConfig {
+  brokerUrl: string
+  clientId: string
+  topic: string
+  qos: MqttQos
+  retain: boolean
+  payload: string
+}
+
 export type McpMode = 'client' | 'server'
 export type McpTransport = 'stdio' | 'http'
 
@@ -97,6 +110,7 @@ export interface ProtocolConfigMap {
   udp: SocketConfig
   rabbitmq: RabbitMqConfig
   kafka: KafkaConfig
+  mqtt: MqttConfig
   mcp: McpConfig
 }
 

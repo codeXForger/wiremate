@@ -27,6 +27,7 @@
   --wire-udp: #a8941c;
   --wire-rabbitmq: #d4582c;
   --wire-kafka: #5d6880;
+  --wire-mqtt: #c94a63;
   --wire-mcp: #3f9c3a;
 }
 
@@ -51,6 +52,7 @@
   --wire-udp: #d6c24a;
   --wire-rabbitmq: #f07a4f;
   --wire-kafka: #9aa5b8;
+  --wire-mqtt: #ef6f86;
   --wire-mcp: #6fcf6a;
 }
 

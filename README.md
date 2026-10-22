@@ -1,7 +1,7 @@
 # WireMate
 
 A desktop toolkit for testing the wires between services: HTTP/REST, GraphQL, WebSocket, Socket.IO, TCP, UDP,
-RabbitMQ, Kafka and MCP, all in one place.
+RabbitMQ, Kafka, MQTT and MCP, all in one place.
 
 > Status: UI shell. Responses are simulated until each protocol client lands on its own feature branch.
 
@@ -36,6 +36,6 @@ The planned on-disk format:
 ## Roadmap
 
 `feat/workspace-fs` → `feat/http` → `feat/graphql` → `feat/websocket` → `feat/socketio` → `feat/tcp-udp` →
-`feat/rabbitmq` → `feat/kafka` → `feat/mcp` → `feat/sync-github-drive`
+`feat/rabbitmq` → `feat/kafka` → `feat/mqtt` → `feat/mcp` → `feat/sync-github-drive`
 
 See [`docs/CODING_RULES.md`](docs/CODING_RULES.md) for the rules every branch follows.
