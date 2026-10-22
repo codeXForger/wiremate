@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
 import type { TreeNode } from '@shared/types/workspace'
+import { itemKeyHandler, type ItemActions } from '@/components/item-keys'
 import { useTabStore } from '@/stores/tab-store'
 
 export interface TreeRowProps {
@@ -12,33 +13,19 @@ export interface TreeRowProps {
   onKeyDown: (event: KeyboardEvent) => void
 }
 
-export interface RowHandlers {
-  activate: () => void
-  rename: () => void
-}
-
-const KEY_ACTIONS: Record<string, keyof RowHandlers> = { Enter: 'activate', F2: 'rename' }
-
-function rowKeyHandler(handlers: RowHandlers): (event: KeyboardEvent) => void {
-  return (event) => {
-    const action = KEY_ACTIONS[event.key]
-    if (action) handlers[action]()
-  }
-}
-
 export function treeRowProps(
   node: TreeNode,
   state: { active: boolean; expanded: boolean },
-  handlers: RowHandlers
+  actions: ItemActions
 ): TreeRowProps {
   return {
     role: 'treeitem',
     tabIndex: 0,
     'aria-selected': state.active,
     'aria-expanded': node.kind === 'folder' ? state.expanded : undefined,
-    onClick: handlers.activate,
-    onDoubleClick: handlers.rename,
-    onKeyDown: rowKeyHandler(handlers)
+    onClick: actions.activate,
+    onDoubleClick: actions.rename,
+    onKeyDown: itemKeyHandler(actions)
   }
 }
 

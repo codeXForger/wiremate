@@ -58,6 +58,20 @@ test('renames a request by double clicking it', async () => {
   await expect(page.getByRole('treeitem', { name: /All users/ })).toBeVisible()
 })
 
+test('renames from a tab and cuts long names with an ellipsis', async () => {
+  const longName = 'All users in the organisation including archived and suspended accounts'
+  await page.getByRole('treeitem', { name: /All users/ }).click()
+  await page.getByRole('tab', { name: /All users/ }).dblclick()
+  const input = page.getByRole('tablist', { name: 'Open requests' }).getByRole('textbox', { name: 'Name' })
+  await input.fill(longName)
+  await input.press('Enter')
+  const title = page.getByRole('tablist', { name: 'Open requests' }).getByTitle(longName)
+  await expect(title).toHaveCSS('text-overflow', 'ellipsis')
+  const clipped = await title.evaluate((el) => el.scrollWidth > el.clientWidth)
+  expect(clipped).toBe(true)
+  if (process.env['SCREENSHOTS']) await page.screenshot({ path: 'test-results/tab-ellipsis.png' })
+})
+
 test('shows the MQTT section', async () => {
   await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'MQTT' }).click()
   await page.getByRole('treeitem', { name: /Sensor telemetry/ }).click()

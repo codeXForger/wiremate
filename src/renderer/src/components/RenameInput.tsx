@@ -1,19 +1,24 @@
 import { useState, type ChangeEvent } from 'react'
-import type { TreeNode } from '@shared/types/workspace'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { renameKeyHandler } from './rename-keys'
 
 const INPUT_CLASS = 'h-5 min-w-0 flex-1 rounded border border-ring bg-surface px-1 outline-none'
 
+/** Anything with an id and a name in the workspace tree: a collection, a folder or a request. */
+export interface Renameable {
+  id: string
+  name: string
+}
+
 interface RenameInputProps {
-  node: TreeNode
+  target: Renameable
   onDone: () => void
 }
 
-function useRename({ node, onDone }: RenameInputProps) {
-  const [value, setValue] = useState(node.name)
+function useRename({ target, onDone }: RenameInputProps) {
+  const [value, setValue] = useState(target.name)
   const commit = (): void => {
-    if (value.trim()) useWorkspaceStore.getState().renameNode(node.id, value.trim())
+    if (value.trim()) useWorkspaceStore.getState().renameNode(target.id, value.trim())
     onDone()
   }
   const onChange = (event: ChangeEvent<HTMLInputElement>): void => setValue(event.target.value)

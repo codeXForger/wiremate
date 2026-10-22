@@ -1,7 +1,10 @@
-import type { KeyboardEvent, MouseEvent } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { X } from 'lucide-react'
 import type { AnyRequest } from '@shared/types/protocol'
+import { itemKeyHandler } from '@/components/item-keys'
+import { ItemName } from '@/components/ItemName'
 import { ProtocolBadge } from '@/components/ProtocolBadge'
+import { RenameInput } from '@/components/RenameInput'
 import { wireColor } from '@/components/wire'
 import { cn } from '@/lib/utils'
 import { useTabStore } from '@/stores/tab-store'
@@ -19,17 +22,19 @@ export function TabBar() {
   )
 }
 
-const TAB_CLASS = 'group flex max-w-56 cursor-default items-center gap-1 border-t-2 border-r pr-1 pl-2.5 text-xs'
+const TAB_CLASS =
+  'group flex max-w-56 min-w-0 shrink-0 cursor-default items-center gap-1 border-t-2 border-r pr-1 pl-2.5 text-xs'
 const TONE = { active: 'bg-background text-foreground', idle: 'text-muted-foreground hover:text-foreground' }
 
-function useTabProps(request: AnyRequest, active: boolean) {
-  const open = (): void => useTabStore.getState().open(request.id)
+function tabProps(request: AnyRequest, active: boolean, rename: () => void) {
+  const activate = (): void => useTabStore.getState().open(request.id)
   return {
     role: 'tab',
     'aria-selected': active,
     tabIndex: 0,
-    onClick: open,
-    onKeyDown: (event: KeyboardEvent) => event.key === 'Enter' && open(),
+    onClick: activate,
+    onDoubleClick: rename,
+    onKeyDown: itemKeyHandler({ activate, rename }),
     style: { borderTopColor: active ? wireColor(request.protocol) : 'transparent' },
     className: cn(TAB_CLASS, active ? TONE.active : TONE.idle)
   }
@@ -42,16 +47,18 @@ function Tab({ id }: { id: string }) {
 }
 
 function TabContent({ request, active }: { request: AnyRequest; active: boolean }) {
+  const [renaming, setRenaming] = useState(false)
+  const stopRenaming = (): void => setRenaming(false)
   return (
-    <div {...useTabProps(request, active)}>
+    <div {...tabProps(request, active, () => setRenaming(true))}>
       <ProtocolBadge protocol={request.protocol} className="w-auto" />
-      <span className="truncate">{request.name}</span>
+      {renaming ? <RenameInput target={request} onDone={stopRenaming} /> : <ItemName name={request.name} />}
       <CloseTabButton request={request} />
     </div>
   )
 }
 
-const CLOSE_CLASS = 'ml-1 flex size-5 items-center justify-center rounded hover:bg-surface'
+const CLOSE_CLASS = 'ml-1 flex size-5 shrink-0 items-center justify-center rounded hover:bg-surface'
 
 function CloseTabButton({ request }: { request: AnyRequest }) {
   const dirty = useTabStore((state) => state.dirtyIds.includes(request.id))

@@ -3,7 +3,8 @@ import { ChevronRight, Folder } from 'lucide-react'
 import type { TreeNode } from '@shared/types/workspace'
 import { ProtocolBadge } from '@/components/ProtocolBadge'
 import { cn } from '@/lib/utils'
-import { RenameInput } from './RenameInput'
+import { ItemName } from '@/components/ItemName'
+import { RenameInput } from '@/components/RenameInput'
 import { TreeItemMenu } from './TreeItemMenu'
 import { TreeList } from './TreeList'
 import { dragSourceProps, dropTargetProps, useIsDropTarget } from './tree-drag'
@@ -47,11 +48,7 @@ function TreeRow({ node, depth, item, ...triggerProps }: TreeRowProps) {
   return (
     <div {...triggerProps} {...item.rowProps} {...drag.props} style={style} className={className}>
       <NodeIcon node={node} expanded={item.expanded} />
-      {item.renaming ? (
-        <RenameInput node={node} onDone={item.stopRename} />
-      ) : (
-        <span className="truncate">{node.name}</span>
-      )}
+      {item.renaming ? <RenameInput target={node} onDone={item.stopRename} /> : <ItemName name={node.name} />}
     </div>
   )
 }
