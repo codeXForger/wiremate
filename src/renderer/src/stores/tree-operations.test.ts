@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest'
+import {
+  insertFolder,
+  insertRequest,
+  patchConfig,
+  removeFromTree,
+  renameInTree,
+  type TreeData
+} from './tree-operations'
+
+const empty: TreeData = { nodes: [], requests: {} }
+
+describe('tree operations', () => {
+  it('inserts folders with unique names', () => {
+    const first = insertFolder(empty, null)
+    const second = insertFolder(first.patch, null)
+    expect(second.patch.nodes.map((n) => n.name)).toEqual(['New folder', 'New folder 2'])
+    expect(second.id).toMatch(/^fld_/)
+  })
+
+  it('inserts requests as nodes and documents', () => {
+    const folder = insertFolder(empty, null)
+    const { id, patch } = insertRequest(folder.patch, folder.id, 'kafka')
+    expect(patch.nodes.find((n) => n.id === id)).toMatchObject({
+      parentId: folder.id,
+      protocol: 'kafka',
+      name: 'Kafka request'
+    })
+    expect(patch.requests[id]?.protocol).toBe('kafka')
+  })
+
+  it('renames nodes and their request documents', () => {
+    const folder = insertFolder(empty, null)
+    const renamedFolder = renameInTree(folder.patch, folder.id, 'APIs')
+    expect(renamedFolder.nodes[0]!.name).toBe('APIs')
+    const req = insertRequest(empty, null, 'http')
+    expect(renameInTree(req.patch, req.id, 'Login').requests[req.id]?.name).toBe('Login')
+  })
+
+  it('removes a folder with everything inside it', () => {
+    const folder = insertFolder(empty, null)
+    const req = insertRequest(folder.patch, folder.id, 'http')
+    const result = removeFromTree(req.patch, folder.id)
+    expect(result).toEqual({ nodes: [], requests: {} })
+  })
+
+  it('patches request config and ignores unknown ids', () => {
+    const req = insertRequest(empty, null, 'http')
+    const patched = patchConfig<'http'>(req.patch, req.id, { url: 'https://x.dev' })
+    expect(patched.requests[req.id]?.config).toMatchObject({ url: 'https://x.dev', method: 'GET' })
+    expect(patchConfig(req.patch, 'missing', {})).toBe(req.patch)
+  })
+})
