@@ -36,6 +36,19 @@ test('edits a request in the real window', async () => {
   await expect(page.getByLabel('Unsaved changes')).toBeVisible()
 })
 
+test('drags a request into another collection', async () => {
+  const sections = page.getByRole('navigation', { name: 'Sections' })
+  await sections.getByRole('button', { name: 'API' }).click()
+  await page.getByRole('button', { name: 'New collection' }).click()
+  await page
+    .getByRole('treeitem', { name: 'List users' })
+    .dragTo(page.getByRole('treeitem', { name: 'New collection' }))
+  const rows = page.getByRole('tree', { name: 'API collections' }).getByRole('treeitem')
+  await expect(rows.nth(0)).toHaveText('New collection')
+  await expect(rows.nth(1)).toHaveText(/List users/)
+  await expect(rows.nth(2)).toHaveText('Public APIs')
+})
+
 test('shows the MQTT section', async () => {
   await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'MQTT' }).click()
   await page.getByRole('treeitem', { name: /Sensor telemetry/ }).click()

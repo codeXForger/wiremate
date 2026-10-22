@@ -18,6 +18,7 @@ export interface TreeSlice {
   addRequest: (parentId: string | null, protocol: ProtocolId) => string
   renameNode: (id: string, name: string) => void
   removeNode: (id: string) => void
+  moveNode: (id: string, parentId: string | null) => void
   updateConfig: <P extends ProtocolId>(id: string, patch: Partial<ProtocolConfigMap[P]>) => void
 }
 

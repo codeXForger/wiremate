@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils'
 import { RenameInput } from './RenameInput'
 import { TreeItemMenu } from './TreeItemMenu'
 import { TreeList } from './TreeList'
+import { dragSourceProps, dropTargetProps, useIsDropTarget } from './tree-drag'
 import { useTreeItem, type TreeItemState } from './use-tree-item'
 
 const INDENT_PX = 12
 const ROW_CLASS = 'flex h-7 cursor-default items-center gap-1.5 pr-2 hover:bg-surface'
+const DROP_CLASS = 'bg-primary/15 outline outline-1 -outline-offset-1 outline-primary'
 
 interface TreeItemProps {
   node: TreeNode
@@ -30,10 +32,20 @@ export function TreeItem({ node, depth }: TreeItemProps) {
 
 type TreeRowProps = TreeItemProps & ComponentProps<'div'> & { item: TreeItemState }
 
+/** Folders receive drops themselves; dropping on a request drops into that request's folder. */
+function useRowDrag(node: TreeNode, item: TreeItemState) {
+  const isFolder = node.kind === 'folder'
+  const isOver = useIsDropTarget(node.id)
+  const dropProps = isFolder ? dropTargetProps(node.id, item.expand) : dropTargetProps(node.parentId)
+  return { props: { ...dragSourceProps(node, !item.renaming), ...dropProps }, isOver: isFolder && isOver }
+}
+
 function TreeRow({ node, depth, item, ...triggerProps }: TreeRowProps) {
+  const drag = useRowDrag(node, item)
   const style = { paddingLeft: 8 + depth * INDENT_PX }
+  const className = cn(ROW_CLASS, item.active && 'bg-surface', drag.isOver && DROP_CLASS)
   return (
-    <div {...triggerProps} {...item.rowProps} style={style} className={cn(ROW_CLASS, item.active && 'bg-surface')}>
+    <div {...triggerProps} {...item.rowProps} {...drag.props} style={style} className={className}>
       <NodeIcon node={node} expanded={item.expanded} />
       {item.renaming ? (
         <RenameInput node={node} onDone={item.stopRename} />

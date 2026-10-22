@@ -4,7 +4,7 @@ import { RequestFactory } from '@shared/protocols/request-factory'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
 import type { TreeNode } from '@shared/types/workspace'
 import { createId } from '@shared/utils/id'
-import { collectSubtreeIds, renameNode, uniqueName } from '@/features/explorer/tree-utils'
+import { canMoveNode, collectSubtreeIds, renameNode, uniqueName } from '@/features/explorer/tree-utils'
 import type { TreeSlice } from './workspace-types'
 
 export type TreeData = Pick<TreeSlice, 'nodes' | 'requests'>
@@ -55,4 +55,10 @@ export function patchConfig<P extends ProtocolId>(
   if (!request) return data
   const updated = { ...request, config: { ...request.config, ...patch } } as AnyRequest
   return { ...data, requests: { ...data.requests, [id]: updated } }
+}
+
+export function moveInTree(data: TreeData, id: string, parentId: string | null): TreeData {
+  if (!canMoveNode(data.nodes, id, parentId)) return data
+  const nodes = data.nodes.map((node) => (node.id === id ? { ...node, parentId } : node))
+  return { ...data, nodes }
 }

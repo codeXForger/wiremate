@@ -36,3 +36,13 @@ export function uniqueName(nodes: TreeNode[], parentId: string | null, base: str
 export function renameNode(nodes: TreeNode[], id: string, name: string): TreeNode[] {
   return nodes.map((node) => (node.id === id ? { ...node, name } : node))
 }
+
+/** A node can move into a folder of the same section (or to the section root), never into itself or its own subtree. */
+export function canMoveNode(nodes: TreeNode[], id: string, targetId: string | null): boolean {
+  const node = nodes.find((candidate) => candidate.id === id)
+  if (!node || node.parentId === targetId) return false
+  if (targetId === null) return true
+  const target = nodes.find((candidate) => candidate.id === targetId)
+  if (target?.kind !== 'folder' || nodeCategory(target) !== nodeCategory(node)) return false
+  return !collectSubtreeIds(nodes, id).has(targetId)
+}

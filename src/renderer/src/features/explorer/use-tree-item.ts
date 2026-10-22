@@ -33,6 +33,7 @@ export interface TreeItemState {
   rowProps: TreeRowProps
   startRename: () => void
   stopRename: () => void
+  expand: () => void
 }
 
 export function useTreeItem(node: TreeNode): TreeItemState {
@@ -41,12 +42,10 @@ export function useTreeItem(node: TreeNode): TreeItemState {
   const active = useTabStore((state) => state.activeId === node.id)
   const activate = (): void => (node.kind === 'folder' ? setExpanded(!expanded) : useTabStore.getState().open(node.id))
   const rowProps = treeRowProps(node, { active, expanded }, activate)
-  return {
-    expanded,
-    renaming,
-    active,
-    rowProps,
+  const controls = {
     startRename: () => setRenaming(true),
-    stopRename: () => setRenaming(false)
+    stopRename: () => setRenaming(false),
+    expand: () => setExpanded(true)
   }
+  return { expanded, renaming, active, rowProps, ...controls }
 }

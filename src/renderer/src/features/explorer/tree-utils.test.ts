@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TreeNode } from '@shared/types/workspace'
-import { childrenOf, collectSubtreeIds, nodeCategory, renameNode, uniqueName } from './tree-utils'
+import { canMoveNode, childrenOf, collectSubtreeIds, nodeCategory, renameNode, uniqueName } from './tree-utils'
 
 const nodes: TreeNode[] = [
   { id: 'r1', parentId: null, kind: 'request', name: 'b request', protocol: 'http' },
@@ -54,5 +54,30 @@ describe('renameNode', () => {
     const renamed = renameNode(nodes, 'f2', 'renamed')
     expect(renamed.find((n) => n.id === 'f2')?.name).toBe('renamed')
     expect(renamed.find((n) => n.id === 'f1')).toBe(nodes[1])
+  })
+})
+
+describe('canMoveNode', () => {
+  const tree: TreeNode[] = [
+    { id: 'a', parentId: null, kind: 'folder', name: 'A', category: 'api' },
+    { id: 'a1', parentId: 'a', kind: 'folder', name: 'A1', category: 'api' },
+    { id: 'b', parentId: null, kind: 'folder', name: 'B', category: 'api' },
+    { id: 'k', parentId: null, kind: 'folder', name: 'K', category: 'kafka' },
+    { id: 'req', parentId: 'a', kind: 'request', name: 'R', protocol: 'http' }
+  ]
+
+  it.each<{ name: string; id: string; target: string | null; allowed: boolean }>([
+    { name: 'a request into another folder of its section', id: 'req', target: 'b', allowed: true },
+    { name: 'a request to the section root', id: 'req', target: null, allowed: true },
+    { name: 'a folder into a sibling folder', id: 'b', target: 'a1', allowed: true },
+    { name: 'into its current parent', id: 'req', target: 'a', allowed: false },
+    { name: 'into another section', id: 'req', target: 'k', allowed: false },
+    { name: 'onto a request', id: 'b', target: 'req', allowed: false },
+    { name: 'a folder into itself', id: 'a', target: 'a', allowed: false },
+    { name: 'a folder into its own subfolder', id: 'a', target: 'a1', allowed: false },
+    { name: 'an unknown node', id: 'missing', target: 'b', allowed: false },
+    { name: 'into an unknown folder', id: 'req', target: 'missing', allowed: false }
+  ])('moving $name → $allowed', ({ id, target, allowed }) => {
+    expect(canMoveNode(tree, id, target)).toBe(allowed)
   })
 })

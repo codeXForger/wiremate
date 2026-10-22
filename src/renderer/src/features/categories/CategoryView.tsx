@@ -5,7 +5,9 @@ import { Hint } from '@/components/Hint'
 import { IconButton } from '@/components/IconButton'
 import { SidebarHeader } from '@/components/SidebarHeader'
 import { TreeList } from '@/features/explorer/TreeList'
+import { dropTargetProps, useIsDropTarget } from '@/features/explorer/tree-drag'
 import { childrenOf } from '@/features/explorer/tree-utils'
+import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { CATEGORY_ICONS, categoryColor } from './category-icons'
 import { QuickCreate } from './QuickCreate'
@@ -53,8 +55,9 @@ function Collections({ category }: CategoryViewProps) {
 function CollectionTree({ category }: CategoryViewProps) {
   const isEmpty = useWorkspaceStore((state) => childrenOf(state.nodes, null, category).length === 0)
   const label = `${CATEGORIES[category].label} collections`
+  const className = cn('min-h-0 flex-1 overflow-auto py-1', useIsDropTarget(null) && 'bg-primary/5')
   return (
-    <div role="tree" aria-label={label} className="min-h-0 flex-1 overflow-auto py-1">
+    <div role="tree" aria-label={label} className={className} {...dropTargetProps(null)}>
       {isEmpty ? <Hint>No collections yet. Create one to group related requests.</Hint> : null}
       {!isEmpty && <TreeList parentId={null} depth={0} category={category} />}
     </div>
