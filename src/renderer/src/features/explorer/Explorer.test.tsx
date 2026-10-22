@@ -96,4 +96,35 @@ describe('Collections tree', () => {
     expect(screen.queryByRole('tab', { name: /Echo socket/ })).not.toBeInTheDocument()
     expect(screen.getByText(/No collections yet/)).toBeInTheDocument()
   })
+
+  it('renames a request on double click', async () => {
+    const { user } = await renderApp()
+    await user.dblClick(screen.getByRole('treeitem', { name: /List users/ }))
+    const input = screen.getByRole('textbox', { name: 'Name' })
+    expect(input).toHaveFocus()
+    await user.clear(input)
+    await user.type(input, 'Get users{Enter}')
+    expect(screen.getByRole('treeitem', { name: /Get users/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Get users/ })).toBeInTheDocument()
+  })
+
+  it('renames a collection on double click without changing whether it is open', async () => {
+    const { user } = await renderApp()
+    const folder = screen.getByRole('treeitem', { name: /Public APIs/ })
+    await user.dblClick(folder)
+    expect(folder).toHaveAttribute('aria-expanded', 'true')
+    await user.type(screen.getByRole('textbox', { name: 'Name' }), ' v2{Enter}')
+    expect(screen.getByRole('treeitem', { name: /Public APIs v2/ })).toBeInTheDocument()
+  })
+
+  it('renames with F2 from the keyboard', async () => {
+    const { user } = await renderApp()
+    screen.getByRole('treeitem', { name: /List users/ }).focus()
+    await user.keyboard('{F2}')
+    expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('List users')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('textbox', { name: 'Name' })).not.toBeInTheDocument()
+    await user.keyboard('{ArrowDown}')
+    expect(screen.queryByRole('textbox', { name: 'Name' })).not.toBeInTheDocument()
+  })
 })

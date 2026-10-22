@@ -49,6 +49,15 @@ test('drags a request into another collection', async () => {
   await expect(rows.nth(2)).toHaveText('Public APIs')
 })
 
+test('renames a request by double clicking it', async () => {
+  await page.getByRole('treeitem', { name: /List users/ }).dblclick()
+  const input = page.getByRole('textbox', { name: 'Name' })
+  await expect(input).toBeFocused()
+  await input.fill('All users')
+  await input.press('Enter')
+  await expect(page.getByRole('treeitem', { name: /All users/ })).toBeVisible()
+})
+
 test('shows the MQTT section', async () => {
   await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'MQTT' }).click()
   await page.getByRole('treeitem', { name: /Sensor telemetry/ }).click()
