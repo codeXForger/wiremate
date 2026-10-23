@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { FlaskConical, LoaderCircle, Play } from 'lucide-react'
+import { FlaskConical, LoaderCircle, Play, Square } from 'lucide-react'
 import type { TestSuite } from '@shared/types/suite'
 import { PanelTabs, type PanelTab } from '@/components/PanelTabs'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,7 @@ import { useSuiteStore } from '@/stores/suite-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { RunHistory } from './RunHistory'
 import { LatestRun } from './RunReport'
-import { runSuite } from './run-suite'
+import { runSuite, stopSuite } from './run-suite'
 import { SuiteItemsPanel } from './SuiteItemsPanel'
 
 export function SuiteEditor({ suiteId }: { suiteId: string }) {
@@ -38,15 +38,23 @@ function SuiteHeader({ suite }: { suite: TestSuite }) {
 
 function RunButton({ suite }: { suite: TestSuite }) {
   const live = useSuiteStore((state) => state.live[suite.id])
-  const label = live ? `Running ${live.results.length}/${live.total}` : 'Run suite'
+  if (live) return <StopButton suiteId={suite.id} progress={`${live.results.length}/${live.total}`} />
   return (
     <Button
       variant="primary"
       className="ml-auto"
-      disabled={Boolean(live) || suite.items.length === 0}
+      disabled={suite.items.length === 0}
       onClick={() => void runSuite(suite.id)}
     >
-      {live ? <LoaderCircle className="animate-spin" /> : <Play />} {label}
+      <Play /> Run suite
+    </Button>
+  )
+}
+
+function StopButton({ suiteId, progress }: { suiteId: string; progress: string }) {
+  return (
+    <Button className="ml-auto" aria-label="Stop run" onClick={() => stopSuite(suiteId)}>
+      <LoaderCircle className="animate-spin" /> {`Running ${progress}`} <Square className="fill-current" /> Stop
     </Button>
   )
 }

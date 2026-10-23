@@ -40,7 +40,7 @@ function suite(nodeIds: string[], options: Partial<TestSuite['options']> = {}): 
 /** A fake pipeline: "Get" fails its test, every request counts calls in the `n` variable. */
 function fakePipeline() {
   return {
-    run: vi.fn((input: PipelineInput): Promise<PipelineResult> => {
+    run: vi.fn((input: PipelineInput, _signal?: AbortSignal): Promise<PipelineResult> => {
       const n = String(Number(input.variables['n'] ?? 0) + 1)
       const passed = input.name !== 'Get'
       return Promise.resolve({
@@ -148,6 +148,51 @@ describe('SuiteRunner', () => {
     })
     const result = await run(suite(['r_login']), pipeline).done
     expect(result.results[0]).toMatchObject({ outcome: 'failed', error: 'ECONNREFUSED; Pre-request script failed: x' })
+  })
+
+  it('stops when the signal aborts: cancels the request in flight and skips the rest', async () => {
+    const controller = new AbortController()
+    const pipeline = fakePipeline()
+    pipeline.run.mockImplementationOnce(async (input) => fakePipeline().run(input))
+    pipeline.run.mockImplementationOnce(async (input) => {
+      controller.abort()
+      const output = await fakePipeline().run(input)
+      return { ...output, response: { ...output.response, cancelled: true, error: 'Request cancelled' } }
+    })
+    const test = suite(['r_login', 'r_list', 'r_get'])
+    const steps = expandSuite(test.items, { nodes, requests })
+    const runner = new SuiteRunner({ pipeline, wait: () => Promise.resolve() })
+    const result = await runner.run({
+      suite: test,
+      steps,
+      variables: {},
+      environmentName: null,
+      signal: controller.signal
+    })
+    expect(result.results.map((r) => [r.name, r.outcome, r.error])).toEqual([
+      ['Login', 'passed', undefined],
+      ['List', 'skipped', 'Cancelled because the run was stopped'],
+      ['Get', 'skipped', 'Skipped because the run was stopped']
+    ])
+    expect(result.stopped).toBe(true)
+    expect(pipeline.run.mock.calls[1]?.[1]).toBe(controller.signal)
+  })
+
+  it('does not send the next request when stopped during the delay', async () => {
+    const controller = new AbortController()
+    const test = suite(['r_login', 'r_list'], { delayMs: 100 })
+    const steps = expandSuite(test.items, { nodes, requests })
+    const pipeline = fakePipeline()
+    const wait = vi.fn(() => (controller.abort(), Promise.resolve()))
+    const result = await new SuiteRunner({ pipeline, wait }).run({
+      suite: test,
+      steps,
+      variables: {},
+      environmentName: null,
+      signal: controller.signal
+    })
+    expect(pipeline.run).toHaveBeenCalledTimes(1)
+    expect(result.results[1]).toMatchObject({ outcome: 'skipped', error: 'Skipped because the run was stopped' })
   })
 
   it('waits with a real timer by default', async () => {

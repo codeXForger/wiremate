@@ -115,6 +115,31 @@ describe('test suites', () => {
     expect(summary).toHaveTextContent('1 skipped')
   })
 
+  it('stops a running suite', async () => {
+    installBridge((request) => (request.url.endsWith('/hang') ? new Promise(() => undefined) : echoResponse(request)))
+    const { user } = await renderApp()
+    addHttpRequest('Hangs', { url: 'https://api.test/hang' })
+    addHttpRequest('Never sent', { url: 'https://api.test/later' })
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    await addToSuite(user, 'Hangs')
+    await addToSuite(user, 'Never sent')
+    await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
+    await user.click(await within(editor).findByRole('button', { name: 'Stop run' }))
+
+    await user.click(within(editor).getByRole('tab', { name: 'Results' }))
+    const summary = await within(editor).findByRole('status', { name: 'Run summary' })
+    expect(summary).toHaveTextContent('1 passed, 0 failed')
+    expect(summary).toHaveTextContent('2 skipped')
+    expect(summary).toHaveTextContent('Stopped')
+    const results = within(editor).getByRole('list', { name: 'Run results' })
+    expect(within(results).getByRole('listitem', { name: 'skipped: Hangs' })).toHaveTextContent(
+      'Cancelled because the run was stopped'
+    )
+    expect(within(editor).getByRole('button', { name: 'Run suite' })).toBeEnabled()
+    expect(useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]?.[0]?.stopped).toBe(true)
+  })
+
   it('reorders by drag and drop and flags deleted requests', async () => {
     const { user } = await renderApp()
     addHttpRequest('Other', { url: 'https://api.test/other' })

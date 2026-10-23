@@ -57,7 +57,7 @@ Scripts may use `await` at the top level. Each one runs in a worker thread of th
 context without `require` or `process`, and is stopped after five seconds. That keeps a script away from the app,
 but it is not a security sandbox: only run scripts you trust.
 
-After **Send**, the response pane shows the status, the total time (hover for time to first byte), the size and a
+While a request is on its way, **Send** turns into **Cancel**. After it returns, the response pane shows the status, the total time (hover for time to first byte), the size and a
 **Tests** tab with every result. The **Console** (status bar, or `` Ctrl/Cmd+` ``) lists each request as it was
 sent (headers and body after variables are filled in), each response, missing variables and script output.
 
@@ -66,7 +66,8 @@ sent (headers and body after variables are filled in), each response, missing va
 The **API** section lists its **Test suites** under the collections. A suite is an ordered list of HTTP requests and folders (a folder runs its HTTP requests in
 explorer order). Reorder by dragging or with the arrow buttons. A suite can stop at the first failure and pause
 between requests. **Run suite** uses the active environment, carries variables from one request to the next and
-shows live progress, passed and failed requests and tests, and timings. Every run is saved to the suite's
+shows live progress, passed and failed requests and tests, and timings. **Stop** cancels the request in flight and
+skips the rest. Every run is saved to the suite's
 **History**.
 
 ## Scripts

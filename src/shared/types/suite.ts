@@ -56,4 +56,6 @@ export interface SuiteRun {
   environmentName: string | null
   results: RequestRunResult[]
   summary: RunSummary
+  /** Set when the user stopped the run before it finished. */
+  stopped?: boolean
 }

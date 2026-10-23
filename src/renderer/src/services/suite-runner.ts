@@ -10,13 +10,15 @@ export interface SuiteRunInput {
   steps: SuiteStep[]
   variables: Variables
   environmentName: string | null
+  /** Aborting it stops the run: the request in flight is cancelled and the rest are skipped. */
+  signal?: AbortSignal
 }
 
 /** Called after each step; `output` is set when the request was actually sent. */
 export type StepListener = (result: RequestRunResult, output?: PipelineResult) => void
 
 interface SuiteRunnerDependencies {
-  pipeline: { run: (input: PipelineInput) => Promise<PipelineResult> }
+  pipeline: { run: (input: PipelineInput, signal?: AbortSignal) => Promise<PipelineResult> }
   now?: () => number
   wait?: (ms: number) => Promise<void>
 }
@@ -27,6 +29,7 @@ interface StepOutcome {
 }
 
 const STOPPED = 'Skipped because an earlier request failed'
+const USER_STOPPED = 'Skipped because the run was stopped'
 
 function skipped(step: SuiteStep, reason: string): RequestRunResult {
   const base = { requestId: step.requestId, name: step.name, method: null, url: '', status: 0, statusText: '' }
@@ -35,6 +38,7 @@ function skipped(step: SuiteStep, reason: string): RequestRunResult {
 
 function toResult(step: SuiteStep, output: PipelineResult): RequestRunResult {
   const { request, response, scriptErrors } = output
+  if (response.cancelled) return { ...skipped(step, 'Cancelled because the run was stopped'), method: request.method }
   const errors = [...(response.error ? [response.error] : []), ...scriptErrors]
   const failed = errors.length > 0 || response.tests.some((test) => !test.passed)
   const base = { requestId: step.requestId, name: step.name, method: request.method, url: request.url }
@@ -51,7 +55,8 @@ interface RunTiming {
 function buildRun(input: SuiteRunInput, results: RequestRunResult[], { startedAt, durationMs }: RunTiming): SuiteRun {
   const { suite, environmentName } = input
   const summary = summarizeRun(results, durationMs)
-  return { id: createId('run'), suiteId: suite.id, suiteName: suite.name, startedAt, environmentName, results, summary }
+  const run = { id: createId('run'), suiteId: suite.id, suiteName: suite.name, startedAt, environmentName, results }
+  return input.signal?.aborted ? { ...run, summary, stopped: true } : { ...run, summary }
 }
 
 type ExecutionDependencies = Pick<SuiteRunnerDependencies, 'pipeline'> & { wait: (ms: number) => Promise<void> }
@@ -77,17 +82,20 @@ class SuiteExecution {
   }
 
   private async runStep(step: SuiteStep): Promise<StepOutcome> {
-    const reason = this.stopped ? STOPPED : step.skipReason
+    const reason = this.skipReason(step)
     if (reason !== undefined || !step.request) return { result: skipped(step, reason ?? STOPPED) }
     await this.pause()
-    const output = await this.deps.pipeline.run({
-      name: step.name,
-      config: step.request.config,
-      variables: this.variables
-    })
+    if (this.input.signal?.aborted) return { result: skipped(step, USER_STOPPED) }
+    const input = { name: step.name, config: step.request.config, variables: this.variables }
+    const output = await this.deps.pipeline.run(input, this.input.signal)
     this.variables = output.variables
     this.sent += 1
     return { result: toResult(step, output), output }
+  }
+
+  private skipReason(step: SuiteStep): string | undefined {
+    if (this.input.signal?.aborted) return USER_STOPPED
+    return this.stopped ? STOPPED : step.skipReason
   }
 
   private async pause(): Promise<void> {

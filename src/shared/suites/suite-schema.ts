@@ -44,5 +44,6 @@ export const SuiteRunSchema = z.object({
   startedAt: z.number(),
   environmentName: z.string().nullable(),
   results: z.array(RequestRunResultSchema),
-  summary: RunSummarySchema
+  summary: RunSummarySchema,
+  stopped: z.boolean().optional()
 })
