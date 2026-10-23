@@ -1,8 +1,10 @@
-import { isSuiteId } from '@shared/suites/suite-factory'
+import type { ReactNode } from 'react'
 import { ResizableGroup, ResizableHandle, ResizablePanel } from '@/components/ui/resizable'
 import { ConsolePanel } from '@/features/console/ConsolePanel'
+import { EnvironmentEditor } from '@/features/environments/EnvironmentEditor'
 import { RequestWorkbench } from '@/features/request/RequestWorkbench'
 import { SuiteEditor } from '@/features/suites/SuiteEditor'
+import { tabKind, type TabKind } from '@/features/tabs/tab-kind'
 import { TabBar } from '@/features/tabs/TabBar'
 import { useConsoleStore } from '@/stores/console-store'
 import { useTabStore } from '@/stores/tab-store'
@@ -34,6 +36,12 @@ function Editors() {
   )
 }
 
+const EDITORS: Record<TabKind, (id: string) => ReactNode> = {
+  request: (id) => <RequestWorkbench key={id} requestId={id} />,
+  suite: (id) => <SuiteEditor key={id} suiteId={id} />,
+  environment: (id) => <EnvironmentEditor key={id} environmentId={id} />
+}
+
 function ActiveEditor({ id }: { id: string }) {
-  return isSuiteId(id) ? <SuiteEditor key={id} suiteId={id} /> : <RequestWorkbench key={id} requestId={id} />
+  return EDITORS[tabKind(id)](id)
 }

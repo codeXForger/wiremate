@@ -1,39 +1,41 @@
-import { Plus } from 'lucide-react'
-import type { KeyValue } from '@shared/types/protocol'
+import { Plus, Variable } from 'lucide-react'
 import type { Environment } from '@shared/types/workspace'
 import { Column } from '@/components/Column'
 import { Hint } from '@/components/Hint'
 import { IconButton } from '@/components/IconButton'
 import { SidebarHeader } from '@/components/SidebarHeader'
+import { SidebarItemList } from '@/components/SidebarItemList'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { KeyValueTable } from '../request/components/KeyValueTable'
+import { createAndOpenEnvironment, deleteEnvironment, renameEnvironment } from './environment-actions'
 
+const EMPTY_HINT =
+  'No environments yet. An environment holds the values {{variables}} stand for, like a base URL or a token.'
+
+/** The Env pane: every environment of the workspace. Click one to edit its variables in a tab. */
 export function EnvironmentsView() {
-  const { environments, activeEnvironmentId, addEnvironment } = useWorkspaceStore()
-  const active = environments.find((env) => env.id === activeEnvironmentId)
-  const add = (): void => addEnvironment(`Environment ${environments.length + 1}`)
   return (
     <Column>
       <SidebarHeader title="Environments">
-        <IconButton label="New environment" icon={Plus} onClick={add} />
+        <IconButton label="New environment" icon={Plus} onClick={createAndOpenEnvironment} />
       </SidebarHeader>
-      {active ? <VariableEditor environment={active} /> : <Hint>Pick an environment in the title bar to edit it.</Hint>}
+      <EnvironmentList />
     </Column>
   )
 }
 
-function VariableEditor({ environment }: { environment: Environment }) {
-  const updateEnvironment = useWorkspaceStore((state) => state.updateEnvironment)
-  const rows = {
-    value: environment.variables,
-    onChange: (variables: KeyValue[]) => updateEnvironment(environment.id, { variables })
-  }
-  return (
-    <div className="min-h-0 flex-1 overflow-auto">
-      <Hint className="pb-0">
-        Variables in {environment.name}. Reference them as {'{{name}}'} in any field.
-      </Hint>
-      <KeyValueTable label="Variable" highlightVariables={false} {...rows} />
-    </div>
-  )
+function EnvironmentList() {
+  const environments = useWorkspaceStore((state) => state.environments)
+  if (environments.length === 0) return <Hint>{EMPTY_HINT}</Hint>
+  const actions = { icon: Variable, onRename: renameEnvironment, onDelete: deleteEnvironment, badge: activeBadge }
+  return <SidebarItemList label="Environments" items={environments} {...actions} />
+}
+
+function activeBadge(environment: Environment) {
+  return <ActiveBadge id={environment.id} />
+}
+
+export function ActiveBadge({ id }: { id: string }) {
+  const active = useWorkspaceStore((state) => state.activeEnvironmentId === id)
+  if (!active) return null
+  return <span className="rounded bg-primary/15 px-1.5 text-[10px] text-primary">active</span>
 }

@@ -45,8 +45,12 @@ describe('workspace store', () => {
 
   it('manages environments', () => {
     const store = setup()
-    store.getState().addEnvironment('Prod')
+    const id = store.getState().addEnvironment('Prod')
     const env = store.getState().environments[0]!
+    expect(env.id).toBe(id)
+    expect(store.getState().activeEnvironmentId).toBe(env.id)
+    store.getState().addEnvironment()
+    expect(store.getState().environments.map((e) => e.name)).toEqual(['Prod', 'Environment 2'])
     expect(store.getState().activeEnvironmentId).toBe(env.id)
     store.getState().updateEnvironment(env.id, { name: 'Production' })
     store.getState().updateEnvironment('other', { name: 'ignored' })

@@ -3,15 +3,16 @@ import { useTabStore } from './tab-store'
 import { useWorkspaceStore } from './workspace-store'
 
 function retainOpenTabs(): void {
-  const requestIds = Object.keys(useWorkspaceStore.getState().requests)
+  const { requests, environments } = useWorkspaceStore.getState()
   const suiteIds = useSuiteStore.getState().suites.map((suite) => suite.id)
-  useTabStore.getState().retain(new Set([...requestIds, ...suiteIds]))
+  const environmentIds = environments.map((env) => env.id)
+  useTabStore.getState().retain(new Set([...Object.keys(requests), ...suiteIds, ...environmentIds]))
 }
 
-/** Observer wiring: tabs follow the requests and suites that exist; suites load with their workspace. */
+/** Observer wiring: tabs follow the requests, environments and suites that exist; suites load with their workspace. */
 export function connectStores(): () => void {
   const stopWorkspace = useWorkspaceStore.subscribe((state, previous) => {
-    if (state.requests !== previous.requests) retainOpenTabs()
+    if (state.requests !== previous.requests || state.environments !== previous.environments) retainOpenTabs()
     if (state.activeWorkspaceId !== previous.activeWorkspaceId) void useSuiteStore.getState().load()
   })
   const stopSuites = useSuiteStore.subscribe((state, previous) => {

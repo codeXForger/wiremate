@@ -204,6 +204,8 @@ test('colours variables and edits their values in place', async () => {
   await page.getByRole('button', { name: 'Add variable' }).click()
   await page.getByRole('textbox', { name: 'Key' }).last().fill('host')
   await page.getByRole('textbox', { name: 'Value' }).last().fill(base)
+  await expect(page.getByRole('region', { name: 'Environment 1 environment' })).toBeVisible()
+  await screenshot('environment')
 
   await section('API').click()
   await page.getByRole('button', { name: 'New HTTP request' }).click()
@@ -213,11 +215,15 @@ test('colours variables and edits their values in place', async () => {
   await expect(field.locator('[data-variable="host"]')).toHaveClass('wm-variable-defined')
   await expect(field.locator('[data-variable="userId"]')).toHaveClass('wm-variable-missing')
 
-  // The coloured copy sits behind the input, so move the pointer to where it is rather than hovering it.
+  // The coloured copy sits behind the input, so move the pointer to where it is rather than hovering it. A real
+  // pointer never rests perfectly still; keep nudging it, as a hand would, until the popover shows.
   const host = (await field.locator('[data-variable="host"]').boundingBox())!
-  await page.mouse.move(host.x + host.width / 2, host.y + host.height / 2)
-  await page.mouse.move(host.x + host.width / 2 + 2, host.y + host.height / 2)
   const hostPopover = page.getByRole('dialog', { name: 'Variable host' })
+  await expect(async () => {
+    await page.mouse.move(host.x + host.width / 2, host.y + host.height / 2)
+    await page.mouse.move(host.x + host.width / 2 + 2, host.y + host.height / 2)
+    await expect(hostPopover).toBeVisible({ timeout: 1000 })
+  }).toPass()
   await expect(hostPopover.getByRole('textbox', { name: 'Value of host' })).toHaveValue(base)
   await screenshot('variable-hover')
 

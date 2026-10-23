@@ -119,9 +119,12 @@ describe('variables in fields', () => {
     expect(value.parentElement!.querySelector('[data-variable="token"]')).toHaveClass('wm-variable-missing')
 
     await goTo(user, 'Env')
-    const add = screen.getByRole('button', { name: 'Add variable' })
-    await user.click(add)
-    const cell = within(add.parentElement!).getAllByRole('textbox', { name: 'Value' }).at(-1)!
+    await user.click(
+      within(screen.getByRole('list', { name: 'Environments' })).getByRole('listitem', { name: 'Local' })
+    )
+    const editor = screen.getByRole('region', { name: 'Local environment' })
+    await user.click(within(editor).getByRole('button', { name: 'Add variable' }))
+    const cell = within(editor).getAllByRole('textbox', { name: 'Value' }).at(-1)!
     await user.type(cell, '{{{{nested}}')
     expect(cell.parentElement!.querySelector('[data-variable]')).toBeNull()
   })

@@ -1,8 +1,8 @@
 import { useState, type MouseEvent, type ReactNode } from 'react'
-import { FlaskConical, X } from 'lucide-react'
-import { isSuiteId } from '@shared/suites/suite-factory'
+import { FlaskConical, Variable, X } from 'lucide-react'
 import type { AnyRequest } from '@shared/types/protocol'
 import type { TestSuite } from '@shared/types/suite'
+import type { Environment } from '@shared/types/workspace'
 import { itemKeyHandler } from '@/components/item-keys'
 import { ItemName } from '@/components/ItemName'
 import { RequestBadge } from '@/components/RequestBadge'
@@ -11,15 +11,21 @@ import { wireColor } from '@/components/wire'
 import { cn } from '@/lib/utils'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useTabStore } from '@/stores/tab-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useRequest } from '../request/use-request'
+import { renameEnvironment } from '../environments/environment-actions'
 import { renameSuite } from '../suites/suite-actions'
+import { tabKind, type TabKind } from './tab-kind'
 
 export function TabBar() {
   const openIds = useTabStore((state) => state.openIds)
   if (openIds.length === 0) return null
   return (
     <div role="tablist" aria-label="Open requests" className="flex h-9 shrink-0 overflow-x-auto border-b bg-panel">
-      {openIds.map((id) => (isSuiteId(id) ? <SuiteTab key={id} id={id} /> : <RequestTab key={id} id={id} />))}
+      {openIds.map((id) => {
+        const Tab = TABS[tabKind(id)]
+        return <Tab key={id} id={id} />
+      })}
     </div>
   )
 }
@@ -85,6 +91,22 @@ function SuiteTab({ id }: { id: string }) {
 function SuiteTabContent({ suite }: { suite: TestSuite }) {
   const icon = <FlaskConical className="size-3 shrink-0 text-muted-foreground" />
   return <TabShell target={suite} accent="var(--primary)" icon={icon} onRename={renameSuite} />
+}
+
+function EnvironmentTab({ id }: { id: string }) {
+  const environment = useWorkspaceStore((state) => state.environments.find((env) => env.id === id))
+  return environment ? <EnvironmentTabContent environment={environment} /> : null
+}
+
+function EnvironmentTabContent({ environment }: { environment: Environment }) {
+  const icon = <Variable className="size-3 shrink-0 text-muted-foreground" />
+  return <TabShell target={environment} accent="var(--primary)" icon={icon} onRename={renameEnvironment} />
+}
+
+const TABS: Record<TabKind, (props: { id: string }) => ReactNode> = {
+  request: RequestTab,
+  suite: SuiteTab,
+  environment: EnvironmentTab
 }
 
 const CLOSE_CLASS = 'ml-1 flex size-5 shrink-0 items-center justify-center rounded hover:bg-surface'

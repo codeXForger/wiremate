@@ -51,6 +51,7 @@ one branch per feature.
 
 ## Navigation
 
+Tabs hold requests, test suites and environments, told apart by id prefix (`features/tabs/tab-kind.ts`).
 The left rail lists **sections** (`src/shared/protocols/categories.ts`): API, GraphQL, Realtime, MCP, MQTT, Kafka,
 Pub/Sub and Network, with Env, History and Settings at the bottom. Selecting a section opens its own pane: a header, a menu with one
 "New … request" entry per protocol, and that section's collections. A collection (folder) stores its `category`;

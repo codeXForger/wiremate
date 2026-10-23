@@ -35,7 +35,10 @@ export interface EnvironmentSlice {
   activeEnvironmentId: string | null
   setActiveEnvironment: (id: string | null) => void
   updateEnvironment: (id: string, patch: Partial<Environment>) => void
-  addEnvironment: (name: string) => void
+  /** Returns the new environment's id. Without a name it is called "Environment <n>". */
+  addEnvironment: (name?: string) => string
+  /** Deletes an environment; when it was the active one, no environment is active afterwards. */
+  removeEnvironment: (id: string) => void
 }
 
 export type WorkspaceState = WorkspaceSlice & TreeSlice & EnvironmentSlice
