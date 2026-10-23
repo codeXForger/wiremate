@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { currentCategory, startNewRequest } from '@/features/request/new-request'
+import { useConsoleStore } from '@/stores/console-store'
 import { useTabStore } from '@/stores/tab-store'
 
 type ShortcutHandler = () => void
@@ -10,6 +11,7 @@ const SHORTCUTS: Record<string, ShortcutHandler> = {
     const { activeId, markClean } = useTabStore.getState()
     if (activeId) markClean(activeId)
   },
+  '`': () => useConsoleStore.getState().toggle(),
   w: () => {
     const { activeId, close } = useTabStore.getState()
     if (activeId) close(activeId)
