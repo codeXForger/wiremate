@@ -1,4 +1,5 @@
 import type { KeyValue } from './protocol'
+import type { TestResult } from './scripting'
 
 export interface ExchangeResponse {
   kind: 'exchange'
@@ -8,6 +9,12 @@ export interface ExchangeResponse {
   sizeBytes: number
   headers: KeyValue[]
   body: string
+  /** Time until the headers arrived, when the response came over the network. */
+  firstByteMs?: number
+  /** Set when the request never got a response (DNS, refused connection, timeout). */
+  error?: string
+  tests: TestResult[]
+  simulated: boolean
 }
 
 export type StreamDirection = 'in' | 'out' | 'system'

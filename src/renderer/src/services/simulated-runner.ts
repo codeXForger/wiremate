@@ -17,8 +17,8 @@ export class SimulatedRunner {
     const body = JSON.stringify(echo, null, 2)
     const headers = [createKeyValue('content-type', 'application/json'), createKeyValue('x-wiremate', 'simulated')]
     const sizeBytes = new TextEncoder().encode(body).length
-    const durationMs = SIMULATED_LATENCY_MS
-    return { kind: 'exchange', status: 200, statusText: 'OK', durationMs, sizeBytes, headers, body }
+    const meta = { durationMs: SIMULATED_LATENCY_MS, sizeBytes, tests: [], simulated: true }
+    return { kind: 'exchange', status: 200, statusText: 'OK', headers, body, ...meta }
   }
 
   public connect(target: string): StreamSession {

@@ -19,7 +19,8 @@ export const PROTOCOL_DEFAULTS: DefaultBuilders = {
     params: [],
     headers: [createKeyValue('Accept', JSON_CONTENT_TYPE)],
     body: { mode: 'none', content: '' },
-    auth: { type: 'none', token: '', username: '', password: '' }
+    auth: { type: 'none', token: '', username: '', password: '' },
+    scripts: { pre: '', post: '' }
   }),
   graphql: () => ({
     url: 'https://countries.trevorblades.com/graphql',
