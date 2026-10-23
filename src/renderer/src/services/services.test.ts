@@ -3,6 +3,7 @@ import { RequestFactory } from '@shared/protocols/request-factory'
 import { NativeFolderPicker } from './folder-picker'
 import { MockWorkspaceRepository } from './mock-workspace-repository'
 import { SimulatedRunner } from './simulated-runner'
+import { createWireMateStub } from '../../test/wiremate-stub'
 
 describe('SimulatedRunner', () => {
   const runner = new SimulatedRunner(() => 42)
@@ -50,7 +51,7 @@ describe('NativeFolderPicker', () => {
   })
 
   it('delegates to the preload bridge', async () => {
-    window.wiremate = { platform: 'darwin', selectFolder: vi.fn().mockResolvedValue('/work') }
+    window.wiremate = createWireMateStub({ selectFolder: vi.fn().mockResolvedValue('/work') })
     expect(await new NativeFolderPicker().pick()).toBe('/work')
   })
 })

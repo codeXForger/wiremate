@@ -69,10 +69,11 @@ export function rawHttpRequest(config: HttpConfig): WireRequest {
 export function finalizeRequest(raw: WireRequest, auth: HttpConfig['auth'], variables: Variables): ResolvedRequest {
   const missing = new Set<string>()
   const fill: Fill = (text) => interpolate(text, variables, missing)
+  const url = fill(raw.url)
   const filled = raw.headers.map(({ key, value }) => ({ key: fill(key), value: fill(value) }))
   const headers = findHeader(filled, 'authorization') ? filled : [...filled, ...authHeader(auth, fill)]
   const body = raw.body === null ? null : fill(raw.body)
-  return { request: { ...raw, url: fill(raw.url), headers, body }, missing: [...missing] }
+  return { request: { ...raw, url, headers, body }, missing: [...missing] }
 }
 
 /** Turns an HTTP request config into the request that is sent, with `{{variables}}` filled in. */

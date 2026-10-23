@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { useTabStore } from '@/stores/tab-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { createRequest, openRequest, renderApp } from '../../../test/render-app'
+import { installBridge } from '../../../test/wiremate-stub'
 
 type User = Awaited<ReturnType<typeof renderApp>>['user']
 
@@ -18,6 +19,7 @@ async function choose(user: User, label: string, option: RegExp) {
 
 describe('HTTP editor', () => {
   it('edits method, url, params and headers, and sends', async () => {
+    installBridge()
     const { user } = await renderApp()
     await openRequest(user, 'API', /List users/)
     await choose(user, 'Method', /^POST$/)
@@ -37,12 +39,12 @@ describe('HTTP editor', () => {
     expect(screen.getByDisplayValue('Accept')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Send' }))
-    expect(screen.getByText('200 OK')).toBeInTheDocument()
+    expect(await screen.findByText('200 OK')).toBeInTheDocument()
     expect(screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Response body' }).value).toContain(
-      '"simulated": true'
+      '"url":"https://httpbin.org/get?page=1"'
     )
     await user.click(screen.getByRole('tab', { name: 'Headers 2' }))
-    expect(screen.getByText('x-wiremate')).toBeInTheDocument()
+    expect(screen.getByText('x-echo')).toBeInTheDocument()
   })
 
   it('edits the body and auth', async () => {

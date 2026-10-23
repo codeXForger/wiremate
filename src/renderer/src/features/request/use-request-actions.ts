@@ -3,6 +3,7 @@ import type { StreamSession } from '@shared/types/response'
 import { SimulatedRunner } from '@/services/simulated-runner'
 import { useResponseStore } from '@/stores/response-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { sendHttpRequest } from './send-http'
 
 const runner = new SimulatedRunner()
 
@@ -12,7 +13,7 @@ function currentSession(id: string): StreamSession {
 }
 
 export interface RequestActions {
-  send: () => void
+  send: () => Promise<void>
   connect: (target: string) => void
   disconnect: () => void
   publish: (payload: string) => void
@@ -25,9 +26,10 @@ export function useRequestActions(id: string): RequestActions {
 function createActions(id: string): RequestActions {
   const store = (): ReturnType<typeof useResponseStore.getState> => useResponseStore.getState()
   return {
-    send: () => {
+    send: async () => {
       const request = useWorkspaceStore.getState().requests[id]
-      if (request) store().setResponse(id, runner.exchange(request))
+      if (request?.protocol === 'http') await sendHttpRequest(request)
+      else if (request) store().setResponse(id, runner.exchange(request))
     },
     connect: (target) => store().setResponse(id, runner.connect(target)),
     disconnect: () => store().setResponse(id, runner.disconnect(currentSession(id))),
