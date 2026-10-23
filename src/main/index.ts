@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { app, BrowserWindow } from 'electron'
 import { DialogController } from './dialog-controller'
 import { HttpClient } from './http/http-client'
@@ -14,7 +15,8 @@ function bootstrap(): void {
     http: new HttpClient(),
     scripts: new ScriptRunner({ workerPath: scriptWorkerPath })
   }).register()
-  new SuiteController(new SuiteFileStore()).register()
+  // WIREMATE_HOME lets the end-to-end tests keep `~` workspaces out of the real home folder.
+  new SuiteController(new SuiteFileStore(process.env['WIREMATE_HOME'] ?? homedir())).register()
   WindowFactory.create()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) WindowFactory.create()
