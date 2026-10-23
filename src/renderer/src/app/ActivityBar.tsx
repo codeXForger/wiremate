@@ -1,4 +1,4 @@
-import { FlaskConical, History, Settings, Variable, type LucideIcon } from 'lucide-react'
+import { History, Settings, Variable, type LucideIcon } from 'lucide-react'
 import { CATEGORIES, CATEGORY_IDS } from '@shared/protocols/categories'
 import { CATEGORY_ICONS, categoryColor } from '@/features/categories/category-icons'
 import { cn } from '@/lib/utils'
@@ -12,7 +12,6 @@ interface RailItem {
 }
 
 const UTILITY_ITEMS: RailItem[] = [
-  { view: 'suites', label: 'Tests', icon: FlaskConical },
   { view: 'environments', label: 'Env', icon: Variable },
   { view: 'history', label: 'History', icon: History },
   { view: 'settings', label: 'Settings', icon: Settings }

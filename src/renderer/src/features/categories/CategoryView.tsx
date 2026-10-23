@@ -10,6 +10,7 @@ import { childrenOf } from '@/features/explorer/tree-utils'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { CATEGORY_ICONS, categoryColor } from './category-icons'
+import { CATEGORY_SECTIONS } from './category-sections'
 import { QuickCreate } from './QuickCreate'
 
 interface CategoryViewProps {
@@ -17,11 +18,13 @@ interface CategoryViewProps {
 }
 
 export function CategoryView({ category }: CategoryViewProps) {
+  const ExtraSection = CATEGORY_SECTIONS[category]
   return (
     <Column>
       <CategoryHeader category={category} />
       <QuickCreate category={category} />
       <Collections category={category} />
+      {ExtraSection && <ExtraSection />}
     </Column>
   )
 }

@@ -63,7 +63,7 @@ sent (headers and body after variables are filled in), each response, missing va
 
 ## Test suites
 
-The **Tests** section holds suites: ordered lists of HTTP requests and folders (a folder runs its HTTP requests in
+The **API** section lists its **Test suites** under the collections. A suite is an ordered list of HTTP requests and folders (a folder runs its HTTP requests in
 explorer order). Reorder by dragging or with the arrow buttons. A suite can stop at the first failure and pause
 between requests. **Run suite** uses the active environment, carries variables from one request to the next and
 shows live progress, passed and failed requests and tests, and timings. Every run is saved to the suite's

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { FlaskConical, Plus, Trash2 } from 'lucide-react'
 import type { TestSuite } from '@shared/types/suite'
-import { Column } from '@/components/Column'
 import { Hint } from '@/components/Hint'
 import { IconButton } from '@/components/IconButton'
 import { itemKeyHandler } from '@/components/item-keys'
@@ -13,16 +12,18 @@ import { useSuiteStore } from '@/stores/suite-store'
 import { useTabStore } from '@/stores/tab-store'
 import { createAndOpenSuite, renameSuite } from './suite-actions'
 
-export function SuitesView() {
+const EMPTY_HINT = 'No suites yet. A suite runs requests and folders in order and checks every test in one go.'
+
+/** The API pane's "Test suites" section, below its collections. */
+export function SuitesSection() {
   const suites = useSuiteStore((state) => state.suites)
   return (
-    <Column>
+    <section aria-label="Test suites section" className="flex max-h-[40%] min-h-0 shrink-0 flex-col border-t">
       <SidebarHeader title="Test suites">
         <IconButton label="New suite" icon={Plus} onClick={createAndOpenSuite} />
       </SidebarHeader>
-      <Hint className="pb-1">Run requests and folders in order, and check every test in one go.</Hint>
-      {suites.length === 0 ? <Hint>No suites yet.</Hint> : <SuiteList suites={suites} />}
-    </Column>
+      {suites.length === 0 ? <Hint>{EMPTY_HINT}</Hint> : <SuiteList suites={suites} />}
+    </section>
   )
 }
 

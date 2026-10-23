@@ -124,7 +124,7 @@ test('connects a WebSocket session', async () => {
 })
 
 test('builds and runs a test suite', async () => {
-  await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'Tests' }).click()
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'API' }).click()
   await page.getByRole('button', { name: 'New suite' }).click()
   const editor = page.getByRole('region', { name: 'Suite 1 suite' })
   await editor.getByRole('button', { name: 'Add request or folder' }).click()

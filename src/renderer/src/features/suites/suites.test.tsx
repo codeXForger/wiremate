@@ -24,8 +24,8 @@ async function addToSuite(user: User, name: string) {
 }
 
 async function newSuite(user: User) {
-  await goTo(user, 'Tests')
-  expect(screen.getByText('No suites yet.')).toBeInTheDocument()
+  await goTo(user, 'API')
+  expect(screen.getByText(/^No suites yet/)).toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'New suite' }))
   return screen.getByRole('region', { name: 'Suite 1 suite' })
 }
@@ -148,7 +148,17 @@ describe('test suites', () => {
 
     await user.click(within(sidebar).getByRole('button', { name: 'Delete Smoke tests' }))
     expect(screen.queryByRole('tab', { name: /Smoke/ })).not.toBeInTheDocument()
-    expect(screen.getByText('No suites yet.')).toBeInTheDocument()
+    expect(screen.getByText(/^No suites yet/)).toBeInTheDocument()
+  })
+
+  it('lives only in the API section', async () => {
+    const { user } = await renderApp()
+    expect(screen.getByRole('region', { name: 'Test suites section' })).toBeInTheDocument()
+    await goTo(user, 'GraphQL')
+    expect(screen.queryByRole('region', { name: 'Test suites section' })).not.toBeInTheDocument()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Sections' })).queryByRole('button', { name: 'Tests' })
+    ).toBeNull()
   })
 
   it('opens a suite from the sidebar and reloads suites with the workspace', async () => {
