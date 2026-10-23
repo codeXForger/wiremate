@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Ban, X } from 'lucide-react'
 import type { ConsoleEntry } from '@shared/types/scripting'
 import { Column } from '@/components/Column'
@@ -52,9 +52,17 @@ function ConsoleList({ filter }: { filter: LevelFilter }) {
   return <EntryList entries={entries} />
 }
 
-function EntryList({ entries }: { entries: ConsoleEntry[] }) {
+/** Keeps the newest entry in view. Chromium's scrollIntoView returns a promise, so it must not be the effect's result. */
+function useScrollToEnd(count: number): RefObject<HTMLDivElement | null> {
   const end = useRef<HTMLDivElement>(null)
-  useEffect(() => end.current?.scrollIntoView({ block: 'end' }), [entries.length])
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'end' })
+  }, [count])
+  return end
+}
+
+function EntryList({ entries }: { entries: ConsoleEntry[] }) {
+  const end = useScrollToEnd(entries.length)
   return (
     <div className="min-h-0 flex-1 overflow-auto">
       <ul aria-label="Console entries">

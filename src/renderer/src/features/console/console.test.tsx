@@ -1,5 +1,5 @@
 import { fireEvent, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { useConsoleStore, CONSOLE_LIMIT } from '@/stores/console-store'
 import { openRequest, renderApp } from '../../../test/render-app'
 import { installBridge } from '../../../test/wiremate-stub'
@@ -7,6 +7,9 @@ import { formatClock } from './console-filter'
 
 describe('console', () => {
   it('shows what was sent, what came back and script logs', async () => {
+    // Chromium's scrollIntoView returns a promise; an effect must not hand that to React as its cleanup.
+    const returnsPromise = (() => Promise.resolve()) as unknown as () => void
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(returnsPromise)
     installBridge()
     const { user } = await renderApp()
     await openRequest(user, 'API', /List users/)
@@ -35,6 +38,7 @@ describe('console', () => {
     expect(within(panel).queryAllByRole('listitem')).toHaveLength(0)
     await user.click(within(panel).getByRole('button', { name: 'Close console' }))
     expect(screen.queryByRole('region', { name: 'Console' })).not.toBeInTheDocument()
+    scroll.mockRestore()
   })
 
   it('toggles with Ctrl+` and keeps only the newest entries', async () => {
