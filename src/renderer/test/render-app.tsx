@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '@/app/App'
+import { useConsoleStore } from '@/stores/console-store'
 import { useResponseStore } from '@/stores/response-store'
+import { useSessionVariables } from '@/stores/session-variables'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -13,6 +15,8 @@ export function resetStores(): void {
   useTabStore.setState(useTabStore.getInitialState(), true)
   useUiStore.setState(useUiStore.getInitialState(), true)
   useResponseStore.setState(useResponseStore.getInitialState(), true)
+  useConsoleStore.setState(useConsoleStore.getInitialState(), true)
+  useSessionVariables.setState(useSessionVariables.getInitialState(), true)
 }
 
 export async function renderApp() {
