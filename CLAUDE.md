@@ -23,16 +23,20 @@ violation of the coding rules is reported straight back, so fix it before moving
 
 ## Layout
 
-- `src/main`: Electron main process (window, IPC handlers). Protocol clients will live here.
+- `src/main`: Electron main process (window, IPC controllers). `http/` sends HTTP with fetch, `scripting/` runs
+  request scripts in a worker thread (`node:vm`), `suites/` stores suites and runs under `<workspace>/.wiremate/`.
 - `src/preload`: typed `window.wiremate` bridge (`WireMateApi` in `src/shared/ipc.ts`)
 - `src/shared`: types, protocol defaults/metadata, `RequestFactory`, utils. No DOM and no Node-only APIs.
+  `scripting/` is the `wm` script API and `expect`; `http/wire-request.ts` turns a config into the request sent.
 - `src/renderer/src`
   - `app/`: shell (title bar, activity bar, sidebar, main area, status bar, global hooks)
   - `components/`: shared UI (`ui/` holds the shadcn-style primitives)
-  - `features/<feature>/`: explorer, workspace, environments, request, response, tabs, settings, history, protocols
+  - `features/<feature>/`: explorer, workspace, environments, request, response, tabs, settings, history, protocols,
+    console, suites
   - `features/protocols/<id>/`: one folder per protocol, registered in `features/protocols/index.ts`
   - `stores/`: zustand stores. Slices delegate to pure functions (`tree-operations.ts`, `tab-utils.ts`).
-  - `services/`: `WorkspaceRepository` (mock for now), `SimulatedRunner`, `NativeFolderPicker`
+  - `services/`: `WorkspaceRepository` (mock for now), `RequestPipeline` (pre-request script → variables → send →
+    post-response script), `SuiteRunner`, `SuiteRepository`, `SimulatedRunner`, `NativeFolderPicker`
 
 ## Coding rules
 
@@ -44,7 +48,7 @@ one branch per feature.
 ## Navigation
 
 The left rail lists **sections** (`src/shared/protocols/categories.ts`): API, GraphQL, Realtime, MCP, MQTT, Kafka,
-Pub/Sub and Network, with Env, History and Settings at the bottom. Selecting a section opens its own pane: a header, a menu with one
+Pub/Sub and Network, with Tests (suites), Env, History and Settings at the bottom. Selecting a section opens its own pane: a header, a menu with one
 "New … request" entry per protocol, and that section's collections. A collection (folder) stores its `category`;
 requests take theirs from their protocol. To add a protocol to a section, list it in `CATEGORIES`.
 
@@ -54,6 +58,8 @@ requests take theirs from their protocol. To add a protocol to a section, list i
 - Bind config fields with `useFieldBinder` / `useConfigBinder`. They return `{ value, onChange }` to spread into inputs.
 - Use `Column`, `Hint`, `IconButton`, `PanelTabs`, `CodePane` and `SidebarHeader` before writing new layout markup.
 - Each protocol has a "wire" colour (`--wire-<id>` in `globals.css`). Use `wireColor()`, never hard-coded hex.
-- Responses are simulated (`SimulatedRunner`) until each protocol's feature branch adds a real client.
+- HTTP goes over the network through `RequestPipeline`. Other protocols are simulated (`SimulatedRunner`) until their
+  feature branch adds a real client.
 - In tests, Monaco and react-resizable-panels are replaced by stubs (`src/renderer/test/`). Use `renderApp()` from
-  `src/renderer/test/render-app.tsx` for integration tests.
+  `src/renderer/test/render-app.tsx` for integration tests, and `installBridge()` from
+  `src/renderer/test/wiremate-stub.ts` to fake the main process (HTTP echo, real script execution).
