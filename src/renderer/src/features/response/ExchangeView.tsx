@@ -2,6 +2,7 @@ import type { ExchangeResponse } from '@shared/types/response'
 import { formatBytes, formatDuration } from '@shared/utils/format'
 import { CodeEditor } from '@/components/CodeEditor'
 import { Column } from '@/components/Column'
+import { Hint } from '@/components/Hint'
 import { PanelTabs, type PanelTab } from '@/components/PanelTabs'
 import { cn } from '@/lib/utils'
 import { TestResults, TestsLabel } from './TestResults'
@@ -27,6 +28,7 @@ export function ExchangeView({ response }: { response: ExchangeResponse }) {
 }
 
 function ResponseBody({ response }: { response: ExchangeResponse }) {
+  if (response.cancelled) return <Hint role="status">Request cancelled. Send it again when you are ready.</Hint>
   if (!response.error) return <CodeEditor ariaLabel="Response body" readOnly value={response.body} />
   return (
     <div role="alert" className="p-3 text-xs">
@@ -36,11 +38,16 @@ function ResponseBody({ response }: { response: ExchangeResponse }) {
   )
 }
 
+function statusLabel(response: ExchangeResponse): string {
+  if (response.cancelled) return 'Cancelled'
+  return response.error ? 'Failed' : `${response.status} ${response.statusText}`
+}
+
 function ResponseMeta({ response }: { response: ExchangeResponse }) {
   const statusTone = response.status > 0 && response.status < 400 ? 'text-success' : 'text-destructive'
   return (
     <div className="ml-auto flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
-      <span className={cn(statusTone)}>{response.error ? 'Failed' : `${response.status} ${response.statusText}`}</span>
+      <span className={cn(statusTone)}>{statusLabel(response)}</span>
       <ResponseTime response={response} />
       <span>{formatBytes(response.sizeBytes)}</span>
       {response.simulated && <span className="rounded border px-1.5">simulated</span>}

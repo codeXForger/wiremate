@@ -4,7 +4,7 @@ import { executeScript } from '@shared/scripting/script-host'
 import type { HttpConfig } from '@shared/types/protocol'
 import type { ScriptRun } from '@shared/types/scripting'
 import { createKeyValue } from '@shared/utils/key-value'
-import { createWireMateStub, echoResponse, functionEvaluate } from '../../test/wiremate-stub'
+import { createWireMateStub, echoResponse, functionEvaluate, installBridge } from '../../test/wiremate-stub'
 import { BridgeHttpTransport, BridgeScriptExecutor } from './bridge-clients'
 import { RequestPipeline, type HttpTransport } from './request-pipeline'
 
@@ -101,7 +101,52 @@ describe('RequestPipeline', () => {
   })
 })
 
+describe('RequestPipeline cancellation', () => {
+  it('does not send when cancelled during the pre-request script', async () => {
+    const send = vi.fn()
+    const controller = new AbortController()
+    const scripts = { run: vi.fn((run: ScriptRun) => (controller.abort(), executeScript(run, functionEvaluate))) }
+    const runner = new RequestPipeline({ transport: { send }, scripts })
+    const result = await runner.run(
+      { name: 'U', config: config({ scripts: { pre: '1', post: '' } }), variables: {} },
+      controller.signal
+    )
+    expect(send).not.toHaveBeenCalled()
+    expect(result.response).toMatchObject({ cancelled: true, error: 'Request cancelled' })
+  })
+
+  it('drops a response that arrives after cancelling and skips the post script', async () => {
+    const controller = new AbortController()
+    const transport: HttpTransport = {
+      send: (request) => {
+        controller.abort()
+        return Promise.resolve(echoResponse(request))
+      }
+    }
+    const { pipeline: runner, scripts } = pipeline(transport)
+    const result = await runner.run(
+      { name: 'U', config: config({ scripts: { pre: '', post: 'x' } }), variables: {} },
+      controller.signal
+    )
+    expect(result.response).toMatchObject({ cancelled: true, durationMs: 34 })
+    expect(result.logs.at(-1)).toMatchObject({ level: 'warn', message: 'Request cancelled' })
+    expect(scripts.run).not.toHaveBeenCalled()
+  })
+})
+
 describe('bridge clients', () => {
+  it('cancels through the bridge when the signal aborts', async () => {
+    const bridge = installBridge(() => new Promise(() => undefined))
+    const controller = new AbortController()
+    const pending = new BridgeHttpTransport().send(
+      { method: 'GET', url: 'http://h', headers: [], body: null },
+      controller.signal
+    )
+    controller.abort()
+    expect(await pending).toMatchObject({ cancelled: true })
+    expect(bridge.cancelHttp).toHaveBeenCalledWith(expect.stringMatching(/^xfer_/))
+  })
+
   const request = { method: 'GET' as const, url: 'http://h', headers: [], body: null }
   const run: ScriptRun = { phase: 'pre', code: 'x', request, variables: {} }
 

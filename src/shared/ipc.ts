@@ -5,6 +5,7 @@ import type { SuiteRun, TestSuite } from './types/suite'
 export const IpcChannel = {
   selectFolder: 'dialog:select-folder',
   sendHttp: 'http:send',
+  cancelHttp: 'http:cancel',
   runScript: 'script:run',
   listSuites: 'suites:list',
   saveSuite: 'suites:save',
@@ -25,6 +26,8 @@ export interface SuiteStorageApi {
 export interface WireMateApi extends SuiteStorageApi {
   readonly platform: string
   selectFolder(): Promise<string | null>
-  sendHttp(request: WireRequest): Promise<HttpResult>
+  /** `transferId` names the request so `cancelHttp` can abort it. */
+  sendHttp(request: WireRequest, transferId?: string): Promise<HttpResult>
+  cancelHttp(transferId: string): Promise<void>
   runScript(run: ScriptRun): Promise<ScriptOutcome>
 }

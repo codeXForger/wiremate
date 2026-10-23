@@ -57,9 +57,26 @@ describe('request scripts', () => {
     await user.paste('{{baseUrl}}/users/{{userId}}')
     await writeScript(user, 'Pre-request', "wm.env.set('userId', '42'); console.log('picked', wm.env.get('userId'))")
     await send(user)
-    expect(bridge.sendHttp).toHaveBeenCalledWith(expect.objectContaining({ url: 'http://localhost:3000/users/42' }))
+    expect(bridge.sendHttp).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'http://localhost:3000/users/42' }),
+      expect.stringMatching(/^xfer_/)
+    )
     expect(useConsoleStore.getState().entries.map((entry) => entry.message)).toContain('picked 42')
     expect(screen.getByRole('tab', { name: 'Tests' })).toBeInTheDocument()
+  })
+
+  it('cancels a request that is still on its way', async () => {
+    installBridge(() => new Promise(() => undefined))
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    await writeScript(user, 'Post-response', "wm.env.set('ran', 'yes')")
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+    expect(await screen.findByText('Cancelled')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Request cancelled')
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled()
+    expect(localVariable('ran')).toBeUndefined()
+    expect(useConsoleStore.getState().entries.at(-1)).toMatchObject({ level: 'warn', message: 'Request cancelled' })
   })
 
   it('shows network errors in place of the body', async () => {

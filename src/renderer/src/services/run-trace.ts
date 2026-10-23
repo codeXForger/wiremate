@@ -16,6 +16,7 @@ function describeMessage(headers: HeaderPair[], body: string | null): string {
 }
 
 function failureEntry(failure: WireFailure): EntryInput {
+  if (failure.cancelled) return { source: 'response', level: 'warn', message: failure.error }
   return { source: 'response', level: 'error', message: `Request failed: ${failure.error}` }
 }
 

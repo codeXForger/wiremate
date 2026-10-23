@@ -12,6 +12,7 @@ const api: WireMateApi = {
   platform: process.platform,
   selectFolder: invoker('selectFolder'),
   sendHttp: invoker('sendHttp'),
+  cancelHttp: invoker('cancelHttp'),
   runScript: invoker('runScript'),
   listSuites: invoker('listSuites'),
   saveSuite: invoker('saveSuite'),

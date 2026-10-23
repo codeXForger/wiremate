@@ -33,6 +33,8 @@ export interface WireFailure {
   kind: 'error'
   error: string
   durationMs: number
+  /** Set when the user cancelled the request rather than it failing. */
+  cancelled?: boolean
 }
 
 export type HttpResult = WireResponse | WireFailure

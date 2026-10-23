@@ -17,11 +17,21 @@ export function recordRun(result: Pick<PipelineResult, 'logs' | 'variables'>): v
   }
 }
 
+/** Sends in progress, by request id. */
+const inFlight = new Map<string, AbortController>()
+
 /** Runs an HTTP request through the pipeline and shows its response. */
 export async function sendHttpRequest(request: RequestDocument<'http'>): Promise<void> {
+  const controller = new AbortController()
+  inFlight.set(request.id, controller)
   useResponseStore.getState().setPending(request.id)
   const input = { name: request.name, config: request.config, variables: activeVariables() }
-  const result = await services.pipeline.run(input)
+  const result = await services.pipeline.run(input, controller.signal).finally(() => inFlight.delete(request.id))
   recordRun(result)
   useResponseStore.getState().setResponse(request.id, result.response)
+}
+
+/** Cancels the request's send, if one is in progress. */
+export function cancelHttpRequest(requestId: string): void {
+  inFlight.get(requestId)?.abort()
 }

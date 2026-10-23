@@ -20,5 +20,6 @@ export function toExchange(response: WireResponse, tests: TestResult[]): Exchang
 
 export function toFailedExchange(failure: WireFailure, tests: TestResult[]): ExchangeResponse {
   const meta = { durationMs: failure.durationMs, sizeBytes: 0, headers: [], body: '', tests, simulated: false }
-  return { kind: 'exchange', status: 0, statusText: 'Error', error: failure.error, ...meta }
+  const cancelled = failure.cancelled ? { cancelled: true } : {}
+  return { kind: 'exchange', status: 0, statusText: 'Error', error: failure.error, ...cancelled, ...meta }
 }

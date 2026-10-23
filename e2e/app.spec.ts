@@ -13,6 +13,7 @@ let base = ''
 /** A local echo server, so the tests do not depend on the network. */
 async function startServer(): Promise<void> {
   server = createServer((req, res) => {
+    if (req.url === '/slow') return void setTimeout(() => res.end('late'), 10_000)
     res.writeHead(200, { 'content-type': 'application/json', 'x-e2e': 'yes' })
     res.end(JSON.stringify({ method: req.method, url: req.url, token: 'abc123' }))
   })
@@ -61,6 +62,16 @@ test('creates an HTTP request, runs its scripts and sends it', async () => {
   await expect(consolePanel.getByRole('listitem', { name: 'post-response: token saved' })).toBeVisible()
   if (process.env['SCREENSHOTS']) await page.screenshot({ path: 'test-results/http.png' })
   await consolePanel.getByRole('button', { name: 'Close console' }).click()
+})
+
+test('cancels a request that is still on its way', async () => {
+  const url = page.getByRole('textbox', { name: 'Request URL' })
+  await url.fill(`${base}/slow`)
+  await page.getByRole('button', { name: 'Send' }).click()
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByText('Cancelled', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Send' })).toBeEnabled()
+  await url.fill(`${base}/echo`)
 })
 
 test('edits a request in the real window', async () => {

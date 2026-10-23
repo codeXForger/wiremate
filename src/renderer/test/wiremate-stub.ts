@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { WireMateApi } from '@shared/ipc'
+import { cancelledResult } from '@shared/http/cancelled'
 import { executeScript, type Evaluate } from '@shared/scripting/script-host'
 import type { HttpResult, WireRequest } from '@shared/types/http'
 import type { ScriptRun } from '@shared/types/scripting'
@@ -10,6 +11,7 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     platform: 'darwin',
     selectFolder: vi.fn().mockResolvedValue(null),
     sendHttp: vi.fn(),
+    cancelHttp: vi.fn().mockResolvedValue(undefined),
     runScript: vi.fn(),
     listSuites: vi.fn().mockResolvedValue([]),
     saveSuite: vi.fn().mockResolvedValue(undefined),
@@ -50,10 +52,22 @@ export function echoResponse(request: WireRequest): HttpResult {
   }
 }
 
-/** Installs a bridge that answers HTTP with `respond` (echo by default) and runs scripts for real. */
-export function installBridge(respond: (request: WireRequest) => HttpResult = echoResponse): WireMateApi {
+export type Responder = (request: WireRequest) => HttpResult | Promise<HttpResult>
+
+/**
+ * Installs a bridge that answers HTTP with `respond` (echo by default) and runs scripts for real.
+ * `cancelHttp` settles a pending send as cancelled, like the main process does.
+ */
+export function installBridge(respond: Responder = echoResponse): WireMateApi {
+  const cancels = new Map<string, () => void>()
+  const sendHttp = (request: WireRequest, transferId?: string): Promise<HttpResult> =>
+    new Promise((resolve) => {
+      if (transferId) cancels.set(transferId, () => resolve(cancelledResult(5)))
+      void Promise.resolve(respond(request)).then(resolve)
+    })
   const bridge = createWireMateStub({
-    sendHttp: vi.fn((request: WireRequest) => Promise.resolve(respond(request))),
+    sendHttp: vi.fn(sendHttp),
+    cancelHttp: vi.fn((transferId: string) => Promise.resolve(cancels.get(transferId)?.())),
     runScript: vi.fn((run: ScriptRun) => executeScript(run, functionEvaluate))
   })
   window.wiremate = bridge

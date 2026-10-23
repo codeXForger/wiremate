@@ -63,6 +63,15 @@ describe('HttpClient', () => {
     expect(result.kind === 'error' && result.error).toMatch(/timeout|aborted/i)
   })
 
+  it('cancels a request in flight by its transfer id', async () => {
+    const client = new HttpClient()
+    const pending = client.send(request({ url: `${base}/slow` }), 'xfer_1')
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    client.cancel('xfer_1')
+    client.cancel('unknown')
+    expect(await pending).toMatchObject({ kind: 'error', error: 'Request cancelled', cancelled: true })
+  })
+
   it('measures time with the injected clock', async () => {
     let tick = 0
     const result = await new HttpClient({ now: () => (tick += 10) }).send(request({}))

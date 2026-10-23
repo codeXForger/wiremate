@@ -15,7 +15,10 @@ export class RequestController {
   public constructor(private readonly services: RequestServices) {}
 
   public register(): void {
-    ipcMain.handle(IpcChannel.sendHttp, (_event, request: WireRequest) => this.services.http.send(request))
+    ipcMain.handle(IpcChannel.sendHttp, (_event, request: WireRequest, transferId?: string) =>
+      this.services.http.send(request, transferId)
+    )
+    ipcMain.handle(IpcChannel.cancelHttp, (_event, transferId: string) => this.services.http.cancel(transferId))
     ipcMain.handle(IpcChannel.runScript, (_event, run: ScriptRun) => this.services.scripts.run(run))
   }
 }

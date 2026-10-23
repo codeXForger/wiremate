@@ -1,3 +1,4 @@
+import { cancelledResult } from '@shared/http/cancelled'
 import { finalizeRequest, rawHttpRequest } from '@shared/http/wire-request'
 import { isBlankScript } from '@shared/scripting/script-host'
 import type { HttpResult, WireRequest, WireResponse } from '@shared/types/http'
@@ -8,7 +9,8 @@ import { toExchange, toFailedExchange } from './exchange-mapping'
 import { RunTrace } from './run-trace'
 
 export interface HttpTransport {
-  send(request: WireRequest): Promise<HttpResult>
+  /** Aborting `signal` cancels the request; the result is then a cancelled failure. */
+  send(request: WireRequest, signal?: AbortSignal): Promise<HttpResult>
 }
 
 export interface ScriptExecutor {
@@ -47,13 +49,14 @@ interface Stage {
 export class RequestPipeline {
   public constructor(private readonly deps: PipelineDependencies) {}
 
-  public async run(input: PipelineInput): Promise<PipelineResult> {
+  /** Aborting `signal` cancels the run: the request is not sent, or its response is dropped, and no post script runs. */
+  public async run(input: PipelineInput, signal?: AbortSignal): Promise<PipelineResult> {
     const trace = new RunTrace(input.name, this.deps.now ?? Date.now)
     const pre = await this.script(trace, { phase: 'pre', code: input.config.scripts.pre, ...this.start(input) })
     const { request, missing } = finalizeRequest(pre.request, input.config.auth, pre.variables)
     trace.missing(missing)
     trace.request(request)
-    const result = await this.deps.transport.send(request)
+    const result = await this.send(request, signal)
     trace.response(result)
     if (result.kind === 'error')
       return RequestPipeline.finish(trace, request, {
@@ -61,6 +64,13 @@ export class RequestPipeline {
         variables: pre.variables
       })
     return this.afterResponse(trace, { ...pre, request }, { response: result, code: input.config.scripts.post })
+  }
+
+  private async send(request: WireRequest, signal?: AbortSignal): Promise<HttpResult> {
+    if (signal?.aborted) return cancelledResult(0)
+    const result = await this.deps.transport.send(request, signal)
+    if (!signal?.aborted || result.kind === 'error') return result
+    return cancelledResult(result.timings.totalMs)
   }
 
   private start(input: PipelineInput): Omit<Stage, 'tests'> {

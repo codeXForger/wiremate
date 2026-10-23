@@ -13,6 +13,7 @@ export interface ExchangeResponse {
   firstByteMs?: number
   /** Set when the request never got a response (DNS, refused connection, timeout). */
   error?: string
+  cancelled?: boolean
   tests: TestResult[]
   simulated: boolean
 }

@@ -1,3 +1,4 @@
+import { cancelledResult } from '@shared/http/cancelled'
 import type { HeaderPair, HttpResult, WireRequest, WireResponse } from '@shared/types/http'
 import { errorMessage } from '@shared/scripting/describe'
 
@@ -14,26 +15,40 @@ interface HttpClientOptions {
 export class HttpClient {
   private readonly timeoutMs: number
   private readonly now: () => number
+  /** Requests in flight by transfer id, so the renderer can cancel them. */
+  private readonly inFlight = new Map<string, AbortController>()
 
   public constructor(options: HttpClientOptions = {}) {
     this.timeoutMs = options.timeoutMs ?? HTTP_TIMEOUT_MS
     this.now = options.now ?? (() => performance.now())
   }
 
-  public async send(request: WireRequest): Promise<HttpResult> {
+  public async send(request: WireRequest, transferId?: string): Promise<HttpResult> {
+    const controller = new AbortController()
+    if (transferId) this.inFlight.set(transferId, controller)
     const startedAt = this.now()
     try {
-      const response = await fetch(request.url, this.init(request))
+      const response = await fetch(request.url, this.init(request, controller.signal))
       return await this.read(response, startedAt, this.now() - startedAt)
     } catch (error) {
-      return { kind: 'error', error: HttpClient.describe(error), durationMs: this.now() - startedAt }
+      const durationMs = this.now() - startedAt
+      if (controller.signal.aborted) return cancelledResult(durationMs)
+      return { kind: 'error', error: HttpClient.describe(error), durationMs }
+    } finally {
+      if (transferId) this.inFlight.delete(transferId)
     }
   }
 
-  private init(request: WireRequest): RequestInit {
+  /** Aborts a request started with this transfer id. Unknown or finished ids are ignored. */
+  public cancel(transferId: string): void {
+    this.inFlight.get(transferId)?.abort()
+  }
+
+  private init(request: WireRequest, cancel: AbortSignal): RequestInit {
     const body = BODYLESS_METHODS.has(request.method) ? undefined : (request.body ?? undefined)
     const headers = request.headers.map(({ key, value }): [string, string] => [key, value])
-    return { method: request.method, headers, body, signal: AbortSignal.timeout(this.timeoutMs) }
+    const signal = AbortSignal.any([cancel, AbortSignal.timeout(this.timeoutMs)])
+    return { method: request.method, headers, body, signal }
   }
 
   private async read(response: Response, startedAt: number, firstByteMs: number): Promise<WireResponse> {
