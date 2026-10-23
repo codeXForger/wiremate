@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CategoryId } from '@shared/protocols/categories'
 
-export type UtilityView = 'environments' | 'history' | 'settings'
+export type UtilityView = 'suites' | 'environments' | 'history' | 'settings'
 export type SidebarView = CategoryId | UtilityView
 export type Theme = 'dark' | 'light'
 export type DialogState =

@@ -30,6 +30,8 @@ const PHASE_LABEL: Record<ScriptPhase, string> = { pre: 'Pre-request', post: 'Po
 /** Collects the console entries for one request: what was sent, what came back and what the scripts logged. */
 export class RunTrace {
   private readonly entries: ConsoleEntry[] = []
+  /** Scripts that threw, as "Pre-request script failed: …". */
+  public readonly scriptErrors: string[] = []
 
   public constructor(
     private readonly requestName: string,
@@ -46,8 +48,10 @@ export class RunTrace {
 
   public script(phase: ScriptPhase, outcome: ScriptOutcome): void {
     outcome.logs.forEach((log) => this.add({ source: phase, ...log }))
-    if (outcome.error)
-      this.add({ source: phase, level: 'error', message: `${PHASE_LABEL[phase]} script failed: ${outcome.error}` })
+    if (!outcome.error) return
+    const message = `${PHASE_LABEL[phase]} script failed: ${outcome.error}`
+    this.scriptErrors.push(message)
+    this.add({ source: phase, level: 'error', message })
   }
 
   public missing(names: string[]): void {

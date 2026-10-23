@@ -4,7 +4,7 @@ import { executeScript } from '@shared/scripting/script-host'
 import type { HttpConfig } from '@shared/types/protocol'
 import type { ScriptRun } from '@shared/types/scripting'
 import { createKeyValue } from '@shared/utils/key-value'
-import { echoResponse, functionEvaluate } from '../../test/wiremate-stub'
+import { createWireMateStub, echoResponse, functionEvaluate } from '../../test/wiremate-stub'
 import { BridgeHttpTransport, BridgeScriptExecutor } from './bridge-clients'
 import { RequestPipeline, type HttpTransport } from './request-pipeline'
 
@@ -62,7 +62,8 @@ describe('RequestPipeline', () => {
   it('logs the request, the response, script output and missing variables', async () => {
     const { pipeline: runner } = pipeline()
     const scripts = { pre: "console.log('hello')", post: 'throw new Error("bad")' }
-    const { logs } = await runner.run({ name: 'Users', config: config({ scripts }), variables: {} })
+    const { logs, scriptErrors } = await runner.run({ name: 'Users', config: config({ scripts }), variables: {} })
+    expect(scriptErrors).toEqual(['Post-response script failed: bad'])
     expect(logs.map(({ source, level, message }) => [source, level, message])).toEqual([
       ['pre', 'log', 'hello'],
       ['system', 'warn', 'No variable for {{base}}, {{token}}; sent as written'],
@@ -115,12 +116,10 @@ describe('bridge clients', () => {
   it('pass calls through to the bridge and turn rejections into errors', async () => {
     const result = echoResponse(request)
     const outcome = { request, variables: {}, tests: [], logs: [] }
-    window.wiremate = {
-      platform: 'darwin',
-      selectFolder: vi.fn(),
+    window.wiremate = createWireMateStub({
       sendHttp: vi.fn().mockResolvedValue(result),
       runScript: vi.fn().mockRejectedValue(new Error('ipc down'))
-    }
+    })
     expect(await new BridgeHttpTransport().send(request)).toBe(result)
     expect(await new BridgeScriptExecutor().run(run)).toEqual({ ...outcome, error: 'ipc down' })
   })

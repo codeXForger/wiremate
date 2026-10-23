@@ -11,6 +11,11 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     selectFolder: vi.fn().mockResolvedValue(null),
     sendHttp: vi.fn(),
     runScript: vi.fn(),
+    listSuites: vi.fn().mockResolvedValue([]),
+    saveSuite: vi.fn().mockResolvedValue(undefined),
+    deleteSuite: vi.fn().mockResolvedValue(undefined),
+    listRuns: vi.fn().mockResolvedValue([]),
+    saveRun: vi.fn().mockResolvedValue(undefined),
     ...overrides
   }
 }

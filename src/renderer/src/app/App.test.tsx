@@ -19,7 +19,7 @@ describe('App shell', () => {
     const labels = within(rail)
       .getAllByRole('button')
       .map((b) => b.textContent)
-    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Env', 'History', 'Settings'])
+    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Tests', 'Env', 'History', 'Settings'])
     expect(within(rail).getByRole('button', { name: 'API' })).toHaveAttribute('aria-pressed', 'true')
   })
 

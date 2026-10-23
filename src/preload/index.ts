@@ -1,11 +1,23 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IpcChannel, type WireMateApi } from '@shared/ipc'
 
+type Invoke<K extends keyof WireMateApi> = WireMateApi[K]
+
+/** Forwards a bridge method to its IPC channel. */
+function invoker<K extends Exclude<keyof WireMateApi, 'platform'>>(method: K): Invoke<K> {
+  return ((...args: unknown[]) => ipcRenderer.invoke(IpcChannel[method], ...args)) as Invoke<K>
+}
+
 const api: WireMateApi = {
   platform: process.platform,
-  selectFolder: () => ipcRenderer.invoke(IpcChannel.selectFolder) as Promise<string | null>,
-  sendHttp: (request) => ipcRenderer.invoke(IpcChannel.sendHttp, request) as ReturnType<WireMateApi['sendHttp']>,
-  runScript: (run) => ipcRenderer.invoke(IpcChannel.runScript, run) as ReturnType<WireMateApi['runScript']>
+  selectFolder: invoker('selectFolder'),
+  sendHttp: invoker('sendHttp'),
+  runScript: invoker('runScript'),
+  listSuites: invoker('listSuites'),
+  saveSuite: invoker('saveSuite'),
+  deleteSuite: invoker('deleteSuite'),
+  listRuns: invoker('listRuns'),
+  saveRun: invoker('saveRun')
 }
 
 contextBridge.exposeInMainWorld('wiremate', api)

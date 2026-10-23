@@ -3,7 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { App } from '@/app/App'
 import { useConsoleStore } from '@/stores/console-store'
 import { useResponseStore } from '@/stores/response-store'
+import { services } from '@/services'
+import { MemorySuiteRepository } from '@/services/suite-repository'
 import { useSessionVariables } from '@/stores/session-variables'
+import { useSuiteStore } from '@/stores/suite-store'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -17,6 +20,8 @@ export function resetStores(): void {
   useResponseStore.setState(useResponseStore.getInitialState(), true)
   useConsoleStore.setState(useConsoleStore.getInitialState(), true)
   useSessionVariables.setState(useSessionVariables.getInitialState(), true)
+  useSuiteStore.setState(useSuiteStore.getInitialState(), true)
+  services.suites = new MemorySuiteRepository()
 }
 
 export async function renderApp() {

@@ -28,10 +28,13 @@ export interface PipelineInput {
 }
 
 export interface PipelineResult {
+  /** The request as it was sent, after the pre-request script and variables. */
+  request: WireRequest
   response: ExchangeResponse
   /** The variables after both scripts ran; the caller writes them back to the environment. */
   variables: Variables
   logs: ConsoleEntry[]
+  scriptErrors: string[]
 }
 
 interface Stage {
@@ -53,7 +56,10 @@ export class RequestPipeline {
     const result = await this.deps.transport.send(request)
     trace.response(result)
     if (result.kind === 'error')
-      return { response: toFailedExchange(result, pre.tests), variables: pre.variables, logs: trace.logs }
+      return RequestPipeline.finish(trace, request, {
+        response: toFailedExchange(result, pre.tests),
+        variables: pre.variables
+      })
     return this.afterResponse(trace, { ...pre, request }, { response: result, code: input.config.scripts.post })
   }
 
@@ -73,7 +79,16 @@ export class RequestPipeline {
       variables: stage.variables
     })
     const tests = [...stage.tests, ...outcome.tests]
-    return { response: toExchange(post.response, tests), variables: outcome.variables, logs: trace.logs }
+    const response = toExchange(post.response, tests)
+    return RequestPipeline.finish(trace, stage.request, { response, variables: outcome.variables })
+  }
+
+  private static finish(
+    trace: RunTrace,
+    request: WireRequest,
+    result: Pick<PipelineResult, 'response' | 'variables'>
+  ): PipelineResult {
+    return { request, ...result, logs: trace.logs, scriptErrors: trace.scriptErrors }
   }
 
   private async script(trace: RunTrace, run: ScriptRun): Promise<Stage> {

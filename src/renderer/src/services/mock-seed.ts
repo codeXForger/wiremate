@@ -23,7 +23,10 @@ const COLLECTIONS: SeedCollection[] = [
 ]
 
 function seedCollection({ id, name, category, requests }: SeedCollection): { nodes: TreeNode[]; docs: AnyRequest[] } {
-  const docs = requests.map(([protocol, title]) => RequestFactory.create(protocol, title) as AnyRequest)
+  // Fixed ids, so saved test suites still point at the seed requests after a restart.
+  const docs = requests.map(
+    ([protocol, title], index) => ({ ...RequestFactory.create(protocol, title), id: `r_${id}_${index}` }) as AnyRequest
+  )
   const folder: TreeNode = { id, parentId: null, kind: 'folder', name, category }
   const children = docs.map((doc): TreeNode => ({
     id: doc.id,

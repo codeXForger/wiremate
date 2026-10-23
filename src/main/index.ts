@@ -4,6 +4,8 @@ import { HttpClient } from './http/http-client'
 import { RequestController } from './request-controller'
 import { ScriptRunner } from './scripting/script-runner'
 import scriptWorkerPath from './scripting/script-worker?modulePath'
+import { SuiteController } from './suite-controller'
+import { SuiteFileStore } from './suites/suite-file-store'
 import { WindowFactory } from './window-factory'
 
 function bootstrap(): void {
@@ -12,6 +14,7 @@ function bootstrap(): void {
     http: new HttpClient(),
     scripts: new ScriptRunner({ workerPath: scriptWorkerPath })
   }).register()
+  new SuiteController(new SuiteFileStore()).register()
   WindowFactory.create()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) WindowFactory.create()
