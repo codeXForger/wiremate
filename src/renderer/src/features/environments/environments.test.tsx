@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useTabStore } from '@/stores/tab-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { goTo, renderApp, type User } from '../../../test/render-app'
+import { answerDeleteDialog, goTo, renderApp, type User } from '../../../test/render-app'
 
 const environment = (name: string) => useWorkspaceStore.getState().environments.find((env) => env.name === name)
 
@@ -65,10 +65,16 @@ describe('environments', () => {
     expect(environment('Production EU')).toBeDefined()
 
     await user.click(within(list).getByRole('button', { name: 'Delete Production EU' }))
+    expect(await answerDeleteDialog(user, 'Cancel')).toContain('"Production EU" and its 0 variables will be deleted.')
+    expect(environment('Production EU')).toBeDefined()
+    await user.click(within(list).getByRole('button', { name: 'Delete Production EU' }))
+    await answerDeleteDialog(user)
     expect(screen.queryByRole('tab', { name: /Production/ })).not.toBeInTheDocument()
     await user.click(within(list).getByRole('button', { name: 'Delete Local' }))
+    expect(await answerDeleteDialog(user)).toContain('"Local" and its 1 variable will be deleted.')
     expect(useWorkspaceStore.getState().activeEnvironmentId).toBeNull()
     await user.click(within(list).getByRole('button', { name: 'Delete Staging' }))
+    await answerDeleteDialog(user)
     expect(screen.getByText(/No environments yet/)).toBeInTheDocument()
     expect(useTabStore.getState().openIds).toEqual([])
   })

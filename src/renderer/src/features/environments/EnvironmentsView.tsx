@@ -6,7 +6,8 @@ import { IconButton } from '@/components/IconButton'
 import { SidebarHeader } from '@/components/SidebarHeader'
 import { SidebarItemList } from '@/components/SidebarItemList'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { createAndOpenEnvironment, deleteEnvironment, renameEnvironment } from './environment-actions'
+import { askToDeleteEnvironment } from '../confirm/confirm-delete'
+import { createAndOpenEnvironment, renameEnvironment } from './environment-actions'
 
 const EMPTY_HINT =
   'No environments yet. An environment holds the values {{variables}} stand for, like a base URL or a token.'
@@ -26,7 +27,7 @@ export function EnvironmentsView() {
 function EnvironmentList() {
   const environments = useWorkspaceStore((state) => state.environments)
   if (environments.length === 0) return <Hint>{EMPTY_HINT}</Hint>
-  const actions = { icon: Variable, onRename: renameEnvironment, onDelete: deleteEnvironment, badge: activeBadge }
+  const actions = { icon: Variable, onRename: renameEnvironment, onDelete: askToDeleteEnvironment, badge: activeBadge }
   return <SidebarItemList label="Environments" items={environments} {...actions} />
 }
 

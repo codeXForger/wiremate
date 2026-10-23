@@ -240,3 +240,19 @@ test('colours variables and edits their values in place', async () => {
   await expect(page.getByText('"url":"/echo?user=42"')).toBeVisible()
   await screenshot('variables')
 })
+
+test('asks before deleting a request', async () => {
+  const request = page.getByRole('treeitem', { name: /HTTP request/ })
+  await request.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  const dialog = page.getByRole('alertdialog')
+  await expect(dialog).toContainText('The request "HTTP request" will be deleted. This cannot be undone.')
+  await screenshot('confirm-delete')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(request).toBeVisible()
+
+  await request.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Delete' }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
+  await expect(request).toHaveCount(0)
+})

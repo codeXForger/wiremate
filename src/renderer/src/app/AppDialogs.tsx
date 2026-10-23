@@ -1,3 +1,4 @@
+import { ConfirmDeleteDialog } from '@/features/confirm/ConfirmDeleteDialog'
 import { NewRequestDialog } from '@/features/request/NewRequestDialog'
 import { CreateWorkspaceDialog } from '@/features/workspace/CreateWorkspaceDialog'
 import { useUiStore } from '@/stores/ui-store'
@@ -9,6 +10,7 @@ export function AppDialogs() {
     <>
       <CreateWorkspaceDialog open={dialog?.type === 'create-workspace'} onClose={close} />
       {dialog?.type === 'new-request' && <NewRequestDialog {...dialog} onClose={close} />}
+      {dialog?.type === 'confirm-delete' && <ConfirmDeleteDialog {...dialog} onClose={close} />}
     </>
   )
 }

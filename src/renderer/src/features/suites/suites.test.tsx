@@ -6,7 +6,7 @@ import { useConsoleStore } from '@/stores/console-store'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useTabStore } from '@/stores/tab-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { goTo, renderApp, type User } from '../../../test/render-app'
+import { answerDeleteDialog, goTo, renderApp, type User } from '../../../test/render-app'
 import { echoResponse, installBridge } from '../../../test/wiremate-stub'
 
 function addHttpRequest(name: string, config: Partial<HttpConfig>): string {
@@ -172,6 +172,7 @@ describe('test suites', () => {
     expect(within(sidebar).getByRole('listitem', { name: 'Smoke tests' })).toBeInTheDocument()
 
     await user.click(within(sidebar).getByRole('button', { name: 'Delete Smoke tests' }))
+    expect(await answerDeleteDialog(user)).toContain('"Smoke tests" and its run history will be deleted.')
     expect(screen.queryByRole('tab', { name: /Smoke/ })).not.toBeInTheDocument()
     expect(screen.getByText(/^No suites yet/)).toBeInTheDocument()
   })

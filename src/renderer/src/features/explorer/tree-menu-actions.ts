@@ -2,6 +2,7 @@ import { Copy, FilePlus, FolderPlus, Pencil, Trash2, type LucideIcon } from 'luc
 import type { TreeNode } from '@shared/types/workspace'
 import { duplicateAndOpen, startNewRequest } from '@/features/request/new-request'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { askToDeleteNode } from '../confirm/confirm-delete'
 import { nodeCategory } from './tree-utils'
 
 export interface MenuAction {
@@ -14,7 +15,7 @@ export interface MenuAction {
 export function treeMenuActions(node: TreeNode, onRename: () => void): MenuAction[] {
   const parentId = node.kind === 'folder' ? node.id : node.parentId
   const category = nodeCategory(node)
-  const { addFolder, removeNode } = useWorkspaceStore.getState()
+  const { addFolder } = useWorkspaceStore.getState()
   const duplicate: MenuAction[] =
     node.kind === 'request' ? [{ label: 'Duplicate', icon: Copy, onSelect: () => duplicateAndOpen(node.id) }] : []
   return [
@@ -22,6 +23,6 @@ export function treeMenuActions(node: TreeNode, onRename: () => void): MenuActio
     { label: 'New folder', icon: FolderPlus, onSelect: () => void addFolder(parentId, category) },
     ...duplicate,
     { label: 'Rename', icon: Pencil, onSelect: onRename },
-    { label: 'Delete', icon: Trash2, onSelect: () => removeNode(node.id), className: 'text-destructive' }
+    { label: 'Delete', icon: Trash2, onSelect: () => askToDeleteNode(node), className: 'text-destructive' }
   ]
 }

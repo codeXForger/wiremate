@@ -60,3 +60,11 @@ export async function createRequest(user: User, section: string, protocol: strin
   await user.click(screen.getByRole('button', { name: `New ${protocol} request` }))
   return screen.getByRole('region', { name: /request$/ })
 }
+
+/** Answers the delete confirmation: "Delete" by default, or "Cancel". Returns the dialog's text. */
+export async function answerDeleteDialog(user: User, answer: 'Delete' | 'Cancel' = 'Delete') {
+  const dialog = await screen.findByRole('alertdialog')
+  const text = dialog.textContent
+  await user.click(within(dialog).getByRole('button', { name: answer }))
+  return text
+}

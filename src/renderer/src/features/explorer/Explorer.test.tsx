@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { goTo, renderApp } from '../../../test/render-app'
+import { answerDeleteDialog, goTo, renderApp } from '../../../test/render-app'
 
 async function openMenu(name: RegExp) {
   fireEvent.contextMenu(screen.getByRole('treeitem', { name }))
@@ -119,9 +119,28 @@ describe('Collections tree', () => {
     expect(screen.getByRole('tab', { name: /Echo socket/ })).toBeInTheDocument()
     await openMenu(/Chat/)
     await user.click(screen.getByRole('menuitem', { name: /Delete/ }))
+    expect(await answerDeleteDialog(user, 'Cancel')).toContain('"Chat" and the 1 request in it will be deleted.')
+    expect(screen.getByRole('treeitem', { name: /Chat/ })).toBeInTheDocument()
+    await openMenu(/Chat/)
+    await user.click(screen.getByRole('menuitem', { name: /Delete/ }))
+    await answerDeleteDialog(user)
     expect(screen.queryByRole('treeitem', { name: /Chat/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: /Echo socket/ })).not.toBeInTheDocument()
     expect(screen.getByText(/No collections yet/)).toBeInTheDocument()
+  })
+
+  it('asks before deleting a request, and names empty folders', async () => {
+    const { user } = await renderApp()
+    await openMenu(/List users/)
+    await user.click(screen.getByRole('menuitem', { name: /Delete/ }))
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toHaveFocus()
+    const text = await answerDeleteDialog(user)
+    expect(text).toContain('Delete request?')
+    expect(text).toContain('The request "List users" will be deleted. This cannot be undone.')
+    expect(screen.queryByRole('treeitem', { name: /List users/ })).not.toBeInTheDocument()
+    await openMenu(/Public APIs/)
+    await user.click(screen.getByRole('menuitem', { name: /Delete/ }))
+    expect(await answerDeleteDialog(user, 'Cancel')).toContain('The folder "Public APIs" is empty.')
   })
 
   it('renames a request on double click', async () => {
