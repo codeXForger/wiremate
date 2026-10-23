@@ -1,24 +1,25 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IpcChannel, type WireMateApi } from '@shared/ipc'
+import { AppEvent, IpcChannel, type WireMateApi } from '@shared/ipc'
 
-type Invoke<K extends keyof WireMateApi> = WireMateApi[K]
+type Method = keyof typeof IpcChannel
 
 /** Forwards a bridge method to its IPC channel. */
-function invoker<K extends Exclude<keyof WireMateApi, 'platform'>>(method: K): Invoke<K> {
-  return ((...args: unknown[]) => ipcRenderer.invoke(IpcChannel[method], ...args)) as Invoke<K>
+function invoker<K extends Method>(method: K): WireMateApi[K] {
+  return ((...args: unknown[]) => ipcRenderer.invoke(IpcChannel[method], ...args)) as WireMateApi[K]
 }
 
-const api: WireMateApi = {
-  platform: process.platform,
-  selectFolder: invoker('selectFolder'),
-  sendHttp: invoker('sendHttp'),
-  cancelHttp: invoker('cancelHttp'),
-  runScript: invoker('runScript'),
-  listSuites: invoker('listSuites'),
-  saveSuite: invoker('saveSuite'),
-  deleteSuite: invoker('deleteSuite'),
-  listRuns: invoker('listRuns'),
-  saveRun: invoker('saveRun')
+const METHODS = Object.keys(IpcChannel) as Method[]
+
+function onBeforeClose(finish: () => Promise<void>): void {
+  ipcRenderer.on(AppEvent.beforeClose, () => {
+    void finish().finally(() => ipcRenderer.send(AppEvent.readyToClose))
+  })
 }
+
+const api = {
+  platform: process.platform,
+  onBeforeClose,
+  ...Object.fromEntries(METHODS.map((method) => [method, invoker(method)]))
+} as WireMateApi
 
 contextBridge.exposeInMainWorld('wiremate', api)

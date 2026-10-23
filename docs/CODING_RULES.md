@@ -19,10 +19,10 @@ These rules apply to every branch. Most are enforced by tooling, so `npm run che
 
 - **Plugin registry (Open/Closed).** Each protocol lives in `src/renderer/src/features/protocols/<id>/` and registers a `ProtocolDefinition` in `protocols/index.ts`. Adding a protocol never touches the shell.
 - **Strategy.** Interaction styles (`exchange` vs `stream`) decide how the response pane renders. Today `SimulatedRunner` produces the responses; real runners will replace it behind the same shape.
-- **Repository.** `WorkspaceRepository` is the storage boundary. `MockWorkspaceRepository` is used now; a folder-backed implementation comes in `feat/workspace-fs`.
+- **Repository.** `WorkspaceRepository` and `SuiteRepository` are the storage boundaries: the preload bridge (files in the workspace folder) in the app, `Memory…Repository` in tests.
 - **Factory.** `RequestFactory.create(protocol, name)` builds requests from `PROTOCOL_DEFAULTS`.
 - **Builder / declarative spec.** `createStreamEditor(spec)` builds connection-style editors (Socket.IO, RabbitMQ, Kafka) from a field spec.
-- **Observer.** `connectStores()` keeps open tabs in sync with the requests that exist.
+- **Observer.** `connectStores()` keeps open tabs in sync with the requests that exist; `connectPersistence()` writes workspace changes to disk.
 - **Dependency injection.** Stores and services take their collaborators through constructor or factory arguments (`createWorkspaceStore(repository)`, `new SimulatedRunner(now)`), so tests can substitute them.
 
 ## Exemptions

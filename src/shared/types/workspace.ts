@@ -26,8 +26,23 @@ export interface Environment {
   variables: KeyValue[]
 }
 
+export type Theme = 'dark' | 'light'
+
+/** Per-workspace settings, stored in the workspace's wiremate.json. */
+export interface WorkspaceSettings {
+  theme: Theme
+  activeEnvironmentId: string | null
+}
+
 export interface WorkspaceContent {
   nodes: TreeNode[]
   requests: Record<string, AnyRequest>
   environments: Environment[]
+  settings: WorkspaceSettings
+}
+
+export interface CreateWorkspaceInput {
+  name: string
+  /** The folder that becomes the workspace. `~` stands for the home folder. */
+  path: string
 }

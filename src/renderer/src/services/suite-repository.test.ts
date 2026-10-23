@@ -1,8 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createSuite } from '@shared/suites/suite-factory'
 import type { SuiteRun } from '@shared/types/suite'
-import { createWireMateStub } from '../../test/wiremate-stub'
-import { BridgeSuiteRepository, MemorySuiteRepository } from './suite-repository'
+import { MemorySuiteRepository } from './suite-repository'
 
 const run = (id: string, suiteId: string, startedAt: number): SuiteRun => ({
   id,
@@ -27,29 +26,5 @@ describe('MemorySuiteRepository', () => {
     expect((await repo.listRuns('/one', suite.id)).map((r) => r.id)).toEqual(['r2', 'r1'])
     await repo.deleteSuite('/one', suite.id)
     expect(await repo.listSuites('/one')).toEqual([])
-  })
-})
-
-describe('BridgeSuiteRepository', () => {
-  it('fails without the desktop bridge', () => {
-    expect(() => new BridgeSuiteRepository().listSuites('/w')).toThrow(/bridge/)
-  })
-
-  it('forwards every call to the bridge', async () => {
-    const bridge = createWireMateStub()
-    window.wiremate = bridge
-    const repo = new BridgeSuiteRepository()
-    const suite = createSuite('A')
-    await repo.listSuites('/w')
-    await repo.saveSuite('/w', suite)
-    await repo.deleteSuite('/w', suite.id)
-    await repo.listRuns('/w', suite.id)
-    await repo.saveRun('/w', run('r', suite.id, 1))
-    expect(bridge.listSuites).toHaveBeenCalledWith('/w')
-    expect(bridge.saveSuite).toHaveBeenCalledWith('/w', suite)
-    expect(bridge.deleteSuite).toHaveBeenCalledWith('/w', suite.id)
-    expect(bridge.listRuns).toHaveBeenCalledWith('/w', suite.id)
-    expect(bridge.saveRun).toHaveBeenCalledWith('/w', expect.objectContaining({ id: 'r' }))
-    vi.restoreAllMocks()
   })
 })

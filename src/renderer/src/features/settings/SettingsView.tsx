@@ -4,7 +4,7 @@ import { SidebarHeader } from '@/components/SidebarHeader'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { useUiStore } from '@/stores/ui-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export function SettingsView() {
   return (
@@ -19,7 +19,7 @@ export function SettingsView() {
 }
 
 function ThemeSetting() {
-  const { theme, setTheme } = useUiStore()
+  const { theme, setTheme } = useWorkspaceStore()
   const onChange = (dark: boolean): void => setTheme(dark ? 'dark' : 'light')
   return (
     <div className="flex items-center justify-between">

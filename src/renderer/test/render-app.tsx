@@ -1,19 +1,26 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '@/app/App'
+import { demoSeed } from './seed'
 import { useConsoleStore } from '@/stores/console-store'
 import { useResponseStore } from '@/stores/response-store'
 import { services } from '@/services'
 import { MemorySuiteRepository } from '@/services/suite-repository'
+import { MemoryWorkspaceRepository } from '@/services/workspace-repository'
 import { useSessionVariables } from '@/stores/session-variables'
 import { useSuiteStore } from '@/stores/suite-store'
+import { saveQueue } from '@/stores/workspace-persistence'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export type User = ReturnType<typeof userEvent.setup>
 
-export function resetStores(): void {
+/** Long enough that nothing is written in the middle of a test; tests that check storage flush the queue. */
+const TEST_SAVE_DELAY_MS = 60_000
+
+/** Resets every store. With `keepStorage`, the workspace and suite storage survive, like files across a restart. */
+export function resetStores({ keepStorage = false } = {}): void {
   useWorkspaceStore.setState(useWorkspaceStore.getInitialState(), true)
   useTabStore.setState(useTabStore.getInitialState(), true)
   useUiStore.setState(useUiStore.getInitialState(), true)
@@ -21,11 +28,15 @@ export function resetStores(): void {
   useConsoleStore.setState(useConsoleStore.getInitialState(), true)
   useSessionVariables.setState(useSessionVariables.getInitialState(), true)
   useSuiteStore.setState(useSuiteStore.getInitialState(), true)
+  saveQueue.clear()
+  saveQueue.delayMs = TEST_SAVE_DELAY_MS
+  if (keepStorage) return
   services.suites = new MemorySuiteRepository()
+  services.workspaces = new MemoryWorkspaceRepository([demoSeed()])
 }
 
-export async function renderApp() {
-  resetStores()
+export async function renderApp(options: { keepStorage?: boolean } = {}) {
+  resetStores(options)
   const user = userEvent.setup()
   const utils = render(<App />)
   await screen.findByRole('treeitem', { name: /List users/ })

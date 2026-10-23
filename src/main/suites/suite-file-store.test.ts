@@ -34,7 +34,7 @@ describe('SuiteFileStore', () => {
     await store.saveSuite(path, suite('suite_b', 'Beta'))
     await store.saveSuite(path, suite('suite_a', 'Alpha'))
     expect((await store.listSuites(path)).map((s) => s.name)).toEqual(['Alpha', 'Beta'])
-    expect(readFileSync(join(path, '.wiremate', 'suites', 'suite_a.json'), 'utf8')).toContain('"name": "Alpha"')
+    expect(readFileSync(join(path, 'suites', 'suite_a.json'), 'utf8')).toContain('"name": "Alpha"')
 
     await store.saveRun(path, run('run_1', 1))
     await store.saveRun(path, run('run_2', 2))
@@ -42,16 +42,16 @@ describe('SuiteFileStore', () => {
 
     await store.deleteSuite(path, 'suite_a')
     expect((await store.listSuites(path)).map((s) => s.id)).toEqual(['suite_b'])
-    expect(existsSync(join(path, '.wiremate', 'runs', 'suite_a'))).toBe(false)
+    expect(existsSync(join(path, 'runs', 'suite_a'))).toBe(false)
   })
 
   it('returns nothing for a workspace without data and skips broken files', async () => {
     const path = workspace()
     const store = new SuiteFileStore()
     expect(await store.listSuites(path)).toEqual([])
-    mkdirSync(join(path, '.wiremate', 'suites'), { recursive: true })
-    writeFileSync(join(path, '.wiremate', 'suites', 'bad.json'), '{ nope')
-    writeFileSync(join(path, '.wiremate', 'suites', 'notes.txt'), 'x')
+    mkdirSync(join(path, 'suites'), { recursive: true })
+    writeFileSync(join(path, 'suites', 'bad.json'), '{ nope')
+    writeFileSync(join(path, 'suites', 'notes.txt'), 'x')
     expect(await store.listSuites(path)).toEqual([])
   })
 
@@ -62,12 +62,6 @@ describe('SuiteFileStore', () => {
     const runs = await store.listRuns(path, 'suite_a')
     expect(runs).toHaveLength(RUN_HISTORY_LIMIT)
     expect(runs[0]?.id).toBe(`run_${RUN_HISTORY_LIMIT + 1}`)
-  })
-
-  it('expands ~ to the home folder', async () => {
-    const home = workspace()
-    await new SuiteFileStore(home).saveSuite('~/demo', suite('suite_a', 'A'))
-    expect(existsSync(join(home, 'demo', '.wiremate', 'suites', 'suite_a.json'))).toBe(true)
   })
 
   it('rejects ids that could escape the folder', async () => {

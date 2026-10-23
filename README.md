@@ -15,17 +15,28 @@ npm run dev
 
 ## Workspaces
 
-A workspace is a folder you choose. You can keep several and switch between them from the title bar.
-The planned on-disk format:
+A workspace is a folder. On first launch WireMate creates an empty **Default** workspace in `~/WireMate/Default`
+and opens it; after that it opens the workspace you used last. **New workspace…** in the title bar turns any folder
+you pick into a workspace (picking a folder that already holds one opens it with its content), and the same menu
+switches between them.
+
+Everything is saved in the workspace folder as plain JSON you can commit: every section's collections, every request
+with its whole config (params, headers, body, auth and scripts), environments, test suites, their run history and
+the workspace settings (theme and active environment).
 
 ```
 <workspace>/
-  wiremate.json                              # name, version, settings
-  environments/<name>.env.json               # variables
-  collections/<folder>/<name>.<protocol>.json
-  .wiremate/suites/<suiteId>.json            # test suites (written today)
-  .wiremate/runs/<suiteId>/<runId>.json      # suite run history (written today, newest 50 listed)
+  wiremate.json                    # name, id and settings
+  collections.json                 # folders and where each request sits, for every section
+  requests/<requestId>.json        # one file per request
+  environments/<environmentId>.json
+  suites/<suiteId>.json            # test suites
+  runs/<suiteId>/<runId>.json      # suite run history (newest 50 listed)
 ```
+
+Changes are written on their own a moment after you stop typing; the dot on a tab means a change is not written yet,
+and `Cmd/Ctrl+S` writes it at once. Closing the window writes anything still pending. The list of workspaces lives in
+the app's data folder, not in any workspace.
 
 ## HTTP scripts and tests
 
@@ -81,7 +92,7 @@ skips the rest. Every run is saved to the suite's
 
 ## Roadmap
 
-`feat/workspace-fs` → `feat/http` → `feat/graphql` → `feat/websocket` → `feat/socketio` → `feat/tcp-udp` →
+`feat/graphql` → `feat/websocket` → `feat/socketio` → `feat/tcp-udp` →
 `feat/rabbitmq` → `feat/kafka` → `feat/mqtt` → `feat/mcp` → `feat/sync-github-drive`
 
 See [`docs/CODING_RULES.md`](docs/CODING_RULES.md) for the rules every branch follows.

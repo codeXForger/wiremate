@@ -16,7 +16,8 @@ export function CreateWorkspaceDialog({ open, onClose }: CreateWorkspaceDialogPr
       <DialogContent>
         <DialogTitle>New workspace</DialogTitle>
         <DialogDescription>
-          A workspace is a folder on disk. Requests and environments are saved there as plain files you can commit.
+          The folder you pick becomes the workspace. Collections, requests, environments, suites and settings are saved
+          there as plain files you can commit. Picking a folder that already holds a workspace opens it.
         </DialogDescription>
         {open && <WorkspaceFormBody onClose={onClose} />}
       </DialogContent>

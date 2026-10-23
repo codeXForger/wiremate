@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { MockWorkspaceRepository } from '@/services/mock-workspace-repository'
+import { MemoryWorkspaceRepository } from '@/services/workspace-repository'
+import { demoSeed } from '../../test/seed'
 import { createWorkspaceStore } from './workspace-store'
 
 function setup() {
-  return createWorkspaceStore(new MockWorkspaceRepository(() => 1000))
+  const repository = new MemoryWorkspaceRepository([demoSeed()], () => 1000)
+  return createWorkspaceStore(() => repository)
 }
 
 describe('workspace store', () => {
@@ -11,7 +13,7 @@ describe('workspace store', () => {
     const store = setup()
     await store.getState().loadWorkspaces()
     expect(store.getState().workspaces).toHaveLength(1)
-    await store.getState().openWorkspace('ws_demo')
+    await store.getState().openLastWorkspace()
     const state = store.getState()
     expect(state.activeWorkspaceId).toBe('ws_demo')
     expect(Object.keys(state.requests)).toHaveLength(8)

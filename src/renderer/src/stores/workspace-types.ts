@@ -1,12 +1,18 @@
 import type { CategoryId } from '@shared/protocols/categories'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
-import type { Environment, TreeNode, Workspace } from '@shared/types/workspace'
-import type { CreateWorkspaceInput } from '@/services/workspace-repository'
+import type { CreateWorkspaceInput, Environment, Theme, TreeNode, Workspace } from '@shared/types/workspace'
 
 export interface WorkspaceSlice {
   workspaces: Workspace[]
   activeWorkspaceId: string | null
+  /** Goes up every time a workspace is loaded, so observers can tell a load from an edit. */
+  loadCount: number
+  /** A setting of the open workspace, saved in its wiremate.json. */
+  theme: Theme
+  setTheme: (theme: Theme) => void
   loadWorkspaces: () => Promise<void>
+  /** Opens the most recently used workspace (the main process creates a default one on first launch). */
+  openLastWorkspace: () => Promise<void>
   openWorkspace: (id: string) => Promise<void>
   createWorkspace: (input: CreateWorkspaceInput) => Promise<void>
 }

@@ -1,7 +1,8 @@
 # WireMate
 
 Desktop app for testing HTTP/REST, GraphQL, WebSocket, Socket.IO, TCP, UDP, RabbitMQ, Kafka, MQTT and MCP endpoints.
-There is no database: workspaces are folders on disk chosen by the user. GitHub / Google Drive sync comes later.
+There is no database: workspaces are folders on disk chosen by the user (a `Default` one in `~/WireMate/Default` on
+first launch). GitHub / Google Drive sync comes later.
 
 ## Stack
 
@@ -24,7 +25,8 @@ violation of the coding rules is reported straight back, so fix it before moving
 ## Layout
 
 - `src/main`: Electron main process (window, IPC controllers). `http/` sends HTTP with fetch, `scripting/` runs
-  request scripts in a worker thread (`node:vm`), `suites/` stores suites and runs under `<workspace>/.wiremate/`.
+  request scripts in a worker thread (`node:vm`), `workspaces/` and `suites/` read and write the workspace folder
+  (layout in `src/shared/workspace/workspace-files.ts`). The renderer names workspaces by id only.
 - `src/preload`: typed `window.wiremate` bridge (`WireMateApi` in `src/shared/ipc.ts`)
 - `src/shared`: types, protocol defaults/metadata, `RequestFactory`, utils. No DOM and no Node-only APIs.
   `scripting/` is the `wm` script API and `expect`; `http/wire-request.ts` turns a config into the request sent.
@@ -35,7 +37,9 @@ violation of the coding rules is reported straight back, so fix it before moving
     console, suites
   - `features/protocols/<id>/`: one folder per protocol, registered in `features/protocols/index.ts`
   - `stores/`: zustand stores. Slices delegate to pure functions (`tree-operations.ts`, `tab-utils.ts`).
-  - `services/`: `WorkspaceRepository` (mock for now), `RequestPipeline` (pre-request script → variables → send →
+    `workspace-persistence.ts` watches the workspace store and writes every change through a debounced `saveQueue`.
+  - `services/`: `WorkspaceRepository` and `SuiteRepository` (the preload bridge in the app, in-memory versions in
+    tests), `RequestPipeline` (pre-request script → variables → send →
     post-response script), `SuiteRunner`, `SuiteRepository`, `SimulatedRunner`, `NativeFolderPicker`
 
 ## Coding rules
@@ -62,5 +66,6 @@ requests take theirs from their protocol. To add a protocol to a section, list i
 - HTTP goes over the network through `RequestPipeline`. Other protocols are simulated (`SimulatedRunner`) until their
   feature branch adds a real client.
 - In tests, Monaco and react-resizable-panels are replaced by stubs (`src/renderer/test/`). Use `renderApp()` from
-  `src/renderer/test/render-app.tsx` for integration tests, and `installBridge()` from
+  `src/renderer/test/render-app.tsx` for integration tests (it opens the demo fixture from `src/renderer/test/seed.ts`;
+  the app itself has no demo data), and `installBridge()` from
   `src/renderer/test/wiremate-stub.ts` to fake the main process (HTTP echo, real script execution).

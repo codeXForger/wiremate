@@ -1,10 +1,9 @@
 import { BridgeHttpTransport, BridgeScriptExecutor } from './bridge-clients'
 import { NativeFolderPicker, type FolderPicker } from './folder-picker'
-import { MockWorkspaceRepository } from './mock-workspace-repository'
 import { RequestPipeline } from './request-pipeline'
-import { BridgeSuiteRepository, MemorySuiteRepository, type SuiteRepository } from './suite-repository'
+import { MemorySuiteRepository, type SuiteRepository } from './suite-repository'
 import { SuiteRunner } from './suite-runner'
-import type { WorkspaceRepository } from './workspace-repository'
+import { MemoryWorkspaceRepository, type WorkspaceRepository } from './workspace-repository'
 
 export interface Services {
   workspaces: WorkspaceRepository
@@ -16,10 +15,11 @@ export interface Services {
 
 const pipeline = new RequestPipeline({ transport: new BridgeHttpTransport(), scripts: new BridgeScriptExecutor() })
 
+/** The preload bridge stores workspaces and suites on disk; without it (tests, a plain browser) they live in memory. */
 export const services: Services = {
-  workspaces: new MockWorkspaceRepository(),
+  workspaces: window.wiremate ?? new MemoryWorkspaceRepository(),
   folderPicker: new NativeFolderPicker(),
   pipeline,
-  suites: window.wiremate ? new BridgeSuiteRepository() : new MemorySuiteRepository(),
+  suites: window.wiremate ?? new MemorySuiteRepository(),
   suiteRunner: new SuiteRunner({ pipeline })
 }

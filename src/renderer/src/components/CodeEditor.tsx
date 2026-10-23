@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react'
-import { useUiStore } from '@/stores/ui-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 interface CodeEditorProps {
   value: string
@@ -18,7 +18,7 @@ const BASE_OPTIONS = {
 }
 
 export function CodeEditor({ value, language = 'json', readOnly, ariaLabel, onChange }: CodeEditorProps) {
-  const theme = useUiStore((state) => (state.theme === 'dark' ? 'wiremate-dark' : 'light'))
+  const theme = useWorkspaceStore((state) => (state.theme === 'dark' ? 'wiremate-dark' : 'light'))
   const options = { ...BASE_OPTIONS, readOnly, ariaLabel }
   const handleChange = (next: string | undefined): void => onChange?.(next ?? '')
   return <Editor value={value} language={language} theme={theme} options={options} onChange={handleChange} />

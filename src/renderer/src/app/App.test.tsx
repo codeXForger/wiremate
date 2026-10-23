@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { CATEGORIES, CATEGORY_IDS } from '@shared/protocols/categories'
 import { useTabStore } from '@/stores/tab-store'
@@ -80,7 +80,7 @@ describe('App shell', () => {
     await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '/x')
     expect(useTabStore.getState().dirtyIds).toHaveLength(1)
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
-    expect(useTabStore.getState().dirtyIds).toHaveLength(0)
+    await waitFor(() => expect(useTabStore.getState().dirtyIds).toHaveLength(0))
     fireEvent.keyDown(window, { key: 'w', metaKey: true })
     expect(useTabStore.getState().openIds).toHaveLength(0)
     fireEvent.keyDown(window, { key: 's', metaKey: true })

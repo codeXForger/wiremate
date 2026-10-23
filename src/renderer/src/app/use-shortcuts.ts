@@ -2,15 +2,13 @@ import { useEffect } from 'react'
 import { currentCategory, duplicateAndOpen, startNewRequest } from '@/features/request/new-request'
 import { useConsoleStore } from '@/stores/console-store'
 import { useTabStore } from '@/stores/tab-store'
+import { saveQueue } from '@/stores/workspace-persistence'
 
 type ShortcutHandler = () => void
 
 const SHORTCUTS: Record<string, ShortcutHandler> = {
   n: () => startNewRequest(null, currentCategory()),
-  s: () => {
-    const { activeId, markClean } = useTabStore.getState()
-    if (activeId) markClean(activeId)
-  },
+  s: () => void saveQueue.flush(),
   '`': () => useConsoleStore.getState().toggle(),
   d: () => {
     const { activeId } = useTabStore.getState()

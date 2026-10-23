@@ -27,15 +27,10 @@ interface SuiteState {
   finishRun: (run: SuiteRun) => void
 }
 
-export function workspacePath(): string | null {
-  const { workspaces, activeWorkspaceId } = useWorkspaceStore.getState()
-  return workspaces.find((workspace) => workspace.id === activeWorkspaceId)?.path ?? null
-}
-
 /** Runs a storage call against the open workspace; does nothing when no workspace is open. */
-async function withWorkspace<T>(action: (path: string) => Promise<T>, fallback: T): Promise<T> {
-  const path = workspacePath()
-  return path === null ? fallback : action(path)
+async function withWorkspace<T>(action: (workspaceId: string) => Promise<T>, fallback: T): Promise<T> {
+  const workspaceId = useWorkspaceStore.getState().activeWorkspaceId
+  return workspaceId === null ? fallback : action(workspaceId)
 }
 
 function nextName(suites: TestSuite[]): string {

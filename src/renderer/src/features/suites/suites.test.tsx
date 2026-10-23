@@ -87,9 +87,9 @@ describe('test suites', () => {
     expect(within(editor).getByRole('list', { name: 'Past runs' })).toBeInTheDocument()
 
     const suiteId = useTabStore.getState().activeId!
-    const workspacePath = useWorkspaceStore.getState().workspaces[0]!.path
-    expect(await services.suites.listRuns(workspacePath, suiteId)).toHaveLength(1)
-    expect((await services.suites.listSuites(workspacePath))[0]?.items).toHaveLength(2)
+    const workspaceId = useWorkspaceStore.getState().activeWorkspaceId!
+    expect(await services.suites.listRuns(workspaceId, suiteId)).toHaveLength(1)
+    expect((await services.suites.listSuites(workspaceId))[0]?.items).toHaveLength(2)
   })
 
   it('stops on the first failure, edits options and removes items', async () => {

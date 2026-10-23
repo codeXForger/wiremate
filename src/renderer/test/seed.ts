@@ -2,6 +2,7 @@ import type { CategoryId } from '@shared/protocols/categories'
 import { RequestFactory } from '@shared/protocols/request-factory'
 import type { AnyRequest, ProtocolId } from '@shared/types/protocol'
 import type { Environment, TreeNode, WorkspaceContent } from '@shared/types/workspace'
+import type { WorkspaceSeed } from '@/services/workspace-repository'
 import { createKeyValue } from '@shared/utils/key-value'
 
 interface SeedCollection {
@@ -23,7 +24,6 @@ const COLLECTIONS: SeedCollection[] = [
 ]
 
 function seedCollection({ id, name, category, requests }: SeedCollection): { nodes: TreeNode[]; docs: AnyRequest[] } {
-  // Fixed ids, so saved test suites still point at the seed requests after a restart.
   const docs = requests.map(
     ([protocol, title], index) => ({ ...RequestFactory.create(protocol, title), id: `r_${id}_${index}` }) as AnyRequest
   )
@@ -45,12 +45,20 @@ function seedEnvironments(): Environment[] {
   ]
 }
 
+/** Test fixture: one collection per section and two environments. The app itself starts empty. */
 export function createSeedContent(): WorkspaceContent {
   const seeded = COLLECTIONS.map(seedCollection)
   const docs = seeded.flatMap((entry) => entry.docs)
   return {
     nodes: seeded.flatMap((entry) => entry.nodes),
     requests: Object.fromEntries(docs.map((doc) => [doc.id, doc])),
-    environments: seedEnvironments()
+    environments: seedEnvironments(),
+    settings: { theme: 'dark', activeEnvironmentId: 'env_local' }
   }
+}
+
+export const DEMO_WORKSPACE = { id: 'ws_demo', name: 'Demo workspace', path: '~/WireMate/demo', lastOpenedAt: 1 }
+
+export function demoSeed(): WorkspaceSeed {
+  return { workspace: { ...DEMO_WORKSPACE }, content: createSeedContent() }
 }
