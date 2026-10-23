@@ -16,6 +16,8 @@ export interface TreeSlice {
   requests: Record<string, AnyRequest>
   addFolder: (parentId: string | null, category: CategoryId) => string
   addRequest: (parentId: string | null, protocol: ProtocolId) => string
+  /** Copies a request into the same folder and returns the copy's id, or null if `id` is not a request. */
+  duplicateRequest: (id: string) => string | null
   renameNode: (id: string, name: string) => void
   removeNode: (id: string) => void
   moveNode: (id: string, parentId: string | null) => void

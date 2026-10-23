@@ -9,7 +9,7 @@ export function EmptyEditor() {
       <Button variant="primary" onClick={() => startNewRequest(null, currentCategory())}>
         <Plus /> New request
       </Button>
-      <p className="text-xs text-muted-foreground">⌘N new request · ⌘S save · ⌘W close tab</p>
+      <p className="text-xs text-muted-foreground">⌘N new request · ⌘D duplicate · ⌘S save · ⌘W close tab</p>
     </div>
   )
 }

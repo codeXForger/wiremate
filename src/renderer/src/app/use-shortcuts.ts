@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { currentCategory, startNewRequest } from '@/features/request/new-request'
+import { currentCategory, duplicateAndOpen, startNewRequest } from '@/features/request/new-request'
 import { useConsoleStore } from '@/stores/console-store'
 import { useTabStore } from '@/stores/tab-store'
 
@@ -12,6 +12,10 @@ const SHORTCUTS: Record<string, ShortcutHandler> = {
     if (activeId) markClean(activeId)
   },
   '`': () => useConsoleStore.getState().toggle(),
+  d: () => {
+    const { activeId } = useTabStore.getState()
+    if (activeId) duplicateAndOpen(activeId)
+  },
   w: () => {
     const { activeId, close } = useTabStore.getState()
     if (activeId) close(activeId)

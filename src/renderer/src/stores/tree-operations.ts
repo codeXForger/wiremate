@@ -32,6 +32,17 @@ export function insertRequest(data: TreeData, parentId: string | null, protocol:
   return { id: request.id, patch: { nodes: [...data.nodes, node], requests } }
 }
 
+/** Copies a request next to the original as "<name> copy", with its own id. Returns null for anything else. */
+export function duplicateInTree(data: TreeData, id: string): Insertion | null {
+  const source = data.requests[id]
+  const node = data.nodes.find((candidate) => candidate.id === id)
+  if (!source || !node) return null
+  const name = uniqueName(data.nodes, node.parentId, `${source.name} copy`)
+  const copy = { ...structuredClone(source), id: createId('req'), name }
+  const requests = { ...data.requests, [copy.id]: copy }
+  return { id: copy.id, patch: { nodes: [...data.nodes, { ...node, id: copy.id, name }], requests } }
+}
+
 export function renameInTree(data: TreeData, id: string, name: string): TreeData {
   const request = data.requests[id]
   const requests = request ? { ...data.requests, [id]: { ...request, name } } : data.requests

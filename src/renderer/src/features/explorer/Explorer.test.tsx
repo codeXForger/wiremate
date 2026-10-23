@@ -9,6 +9,33 @@ async function openMenu(name: RegExp) {
 }
 
 describe('Collections tree', () => {
+  it('duplicates a request from its menu and opens the copy', async () => {
+    const { user } = await renderApp()
+    await user.click(screen.getByRole('treeitem', { name: /List users/ }))
+    await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '?page=2')
+    await openMenu(/List users/)
+    await user.click(screen.getByRole('menuitem', { name: /Duplicate/ }))
+    expect(screen.getByRole('tab', { name: /List users copy/ })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('treeitem', { name: /List users copy/ })).toBeInTheDocument()
+    const url = screen.getByRole('textbox', { name: 'Request URL' })
+    expect(url).toHaveValue('https://httpbin.org/get?page=2')
+
+    await user.type(url, '&copy=1')
+    const urls = Object.values(useWorkspaceStore.getState().requests)
+      .filter((request) => request.name.startsWith('List users'))
+      .map((request) => (request.protocol === 'http' ? request.config.url : ''))
+    expect(urls.sort()).toEqual(['https://httpbin.org/get?page=2', 'https://httpbin.org/get?page=2&copy=1'])
+  })
+
+  it('duplicates the open request with Ctrl+D, and offers no duplicate for folders', async () => {
+    const { user } = await renderApp()
+    await user.click(screen.getByRole('treeitem', { name: /List users/ }))
+    fireEvent.keyDown(window, { key: 'd', ctrlKey: true })
+    expect(screen.getByRole('tab', { name: /List users copy/ })).toHaveAttribute('aria-selected', 'true')
+    await openMenu(/Public APIs/)
+    expect(screen.queryByRole('menuitem', { name: /Duplicate/ })).not.toBeInTheDocument()
+  })
+
   it('collapses and expands collections', async () => {
     const { user } = await renderApp()
     const folder = screen.getByRole('treeitem', { name: /Public APIs/ })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  duplicateInTree,
   insertFolder,
   insertRequest,
   moveInTree,
@@ -12,6 +13,29 @@ import {
 const empty: TreeData = { nodes: [], requests: {} }
 
 describe('tree operations', () => {
+  it('duplicates a request into the same folder with its own copy of the config', () => {
+    const folder = insertFolder(empty, null, 'api')
+    const original = insertRequest(folder.patch, folder.id, 'http')
+    const first = duplicateInTree(original.patch, original.id)!
+    const second = duplicateInTree(first.patch, original.id)!
+    const copy = second.patch.requests[first.id]!
+    expect(second.patch.nodes.filter((n) => n.parentId === folder.id).map((n) => n.name)).toEqual([
+      'HTTP request',
+      'HTTP request copy',
+      'HTTP request copy 2'
+    ])
+    expect(copy).toMatchObject({ name: 'HTTP request copy', protocol: 'http' })
+    expect(copy.id).not.toBe(original.id)
+    expect(copy.config).toEqual(original.patch.requests[original.id]!.config)
+    expect(copy.config).not.toBe(original.patch.requests[original.id]!.config)
+  })
+
+  it('duplicates only requests that exist', () => {
+    const folder = insertFolder(empty, null, 'api')
+    expect(duplicateInTree(folder.patch, folder.id)).toBeNull()
+    expect(duplicateInTree(folder.patch, 'missing')).toBeNull()
+  })
+
   it('inserts folders with unique names', () => {
     const first = insertFolder(empty, null, 'api')
     const second = insertFolder(first.patch, null, 'api')
