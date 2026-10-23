@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
-import { Input } from '@/components/ui/input'
+import { inputClass } from '@/components/ui/input'
+import { VariableInput } from '@/features/variables/VariableInput'
+import { cn } from '@/lib/utils'
 import type { BoundField } from '../use-field-binder'
 
 interface UrlBarProps extends BoundField {
@@ -9,16 +11,18 @@ interface UrlBarProps extends BoundField {
   action: ReactNode
 }
 
+const URL_CLASS = cn(inputClass, 'font-mono text-xs')
+
 export function UrlBar({ value, label, placeholder, leading, action, onChange }: UrlBarProps) {
   return (
     <div className="flex items-center gap-2 border-b p-3">
       {leading}
-      <Input
+      <VariableInput
         aria-label={label}
         value={value}
         placeholder={placeholder}
-        className="font-mono text-xs"
-        onChange={(event) => onChange(event.target.value)}
+        className={URL_CLASS}
+        onValueChange={onChange}
       />
       {action}
     </div>

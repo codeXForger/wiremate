@@ -21,11 +21,11 @@ function GraphqlPanes({ requestId }: EditorProps) {
   return (
     <ResizableGroup className="min-h-0 flex-1">
       <ResizablePanel defaultSize="65" minSize="30">
-        <CodePane title="Query" language="graphql" {...bind('query')} />
+        <CodePane title="Query" language="graphql" highlightVariables {...bind('query')} />
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel minSize="20">
-        <CodePane title="Variables" {...bind('variables')} />
+        <CodePane title="Variables" highlightVariables {...bind('variables')} />
       </ResizablePanel>
     </ResizableGroup>
   )

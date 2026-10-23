@@ -14,7 +14,7 @@ export function MessageComposer({ requestId, value, label = 'Message', language,
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1">
-        <CodeEditor ariaLabel={label} value={value} language={language} onChange={onChange} />
+        <CodeEditor ariaLabel={label} value={value} language={language} onChange={onChange} highlightVariables />
       </div>
       <ComposerFooter requestId={requestId} label={label} value={value} />
     </div>

@@ -5,6 +5,7 @@ interface CodePaneProps {
   value: string
   language?: string
   onChange: (value: string) => void
+  highlightVariables?: boolean
 }
 
 export function CodePane({ title, ...editor }: CodePaneProps) {

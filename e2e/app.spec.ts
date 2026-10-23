@@ -197,3 +197,40 @@ test('creates a second workspace in a chosen folder and switches between them', 
   await section('API').click()
   await expect(page.getByRole('treeitem', { name: 'New collection' })).toBeVisible()
 })
+
+test('colours variables and edits their values in place', async () => {
+  await section('Env').click()
+  await page.getByRole('button', { name: 'New environment' }).click()
+  await page.getByRole('button', { name: 'Add variable' }).click()
+  await page.getByRole('textbox', { name: 'Key' }).last().fill('host')
+  await page.getByRole('textbox', { name: 'Value' }).last().fill(base)
+
+  await section('API').click()
+  await page.getByRole('button', { name: 'New HTTP request' }).click()
+  const url = page.getByRole('textbox', { name: 'Request URL' })
+  await url.fill('{{host}}/echo?user={{userId}}')
+  const field = url.locator('..')
+  await expect(field.locator('[data-variable="host"]')).toHaveClass('wm-variable-defined')
+  await expect(field.locator('[data-variable="userId"]')).toHaveClass('wm-variable-missing')
+
+  // The coloured copy sits behind the input, so move the pointer to where it is rather than hovering it.
+  const host = (await field.locator('[data-variable="host"]').boundingBox())!
+  await page.mouse.move(host.x + host.width / 2, host.y + host.height / 2)
+  await page.mouse.move(host.x + host.width / 2 + 2, host.y + host.height / 2)
+  const hostPopover = page.getByRole('dialog', { name: 'Variable host' })
+  await expect(hostPopover.getByRole('textbox', { name: 'Value of host' })).toHaveValue(base)
+  await screenshot('variable-hover')
+
+  const box = (await field.locator('[data-variable="userId"]').boundingBox())!
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  const userPopover = page.getByRole('dialog', { name: 'Variable userId' })
+  await expect(userPopover).toContainText('Not set in Environment 1')
+  await userPopover.getByRole('textbox', { name: 'Value of userId' }).fill('42')
+  await userPopover.getByRole('textbox', { name: 'Value of userId' }).press('Enter')
+  await expect(field.locator('[data-variable="userId"]')).toHaveClass('wm-variable-defined')
+
+  await page.getByRole('button', { name: 'Send' }).click()
+  await expect(page.getByText('200 OK')).toBeVisible()
+  await expect(page.getByText('"url":"/echo?user=42"')).toBeVisible()
+  await screenshot('variables')
+})

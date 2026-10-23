@@ -38,6 +38,13 @@ Changes are written on their own a moment after you stop typing; the dot on a ta
 and `Cmd/Ctrl+S` writes it at once. Closing the window writes anything still pending. The list of workspaces lives in
 the app's data folder, not in any workspace.
 
+## Variables
+
+`{{name}}` works in the URL, params, headers, auth, body and messages. Placeholders are coloured: one colour when the
+active environment defines the variable, red when it does not. Hover or click one to see its value and change it on
+the spot; a value typed for a missing variable is added to the active environment (or kept for the session when no
+environment is selected).
+
 ## HTTP scripts and tests
 
 Every HTTP request has a **Scripts** tab with two JavaScript editors:

@@ -41,6 +41,7 @@ function BodyEditor({ value, onChange }: Bound<HttpBody>) {
     <div className="min-h-0 flex-1">
       <CodeEditor
         ariaLabel="Request body"
+        highlightVariables
         language={LANGUAGE[value.mode]}
         value={value.content}
         onChange={setContent}

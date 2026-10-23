@@ -37,6 +37,9 @@
   --method-delete: #c24141;
   --method-head: #5e6678;
   --method-options: #5e6678;
+
+  --variable-defined: #1f8a78;
+  --variable-missing: #c24141;
 }
 
 .dark {
@@ -70,6 +73,9 @@
   --method-delete: #e06a6a;
   --method-head: #8a93a8;
   --method-options: #8a93a8;
+
+  --variable-defined: #3fbfa8;
+  --variable-missing: #ef6f6f;
 }
 
 @theme inline {
@@ -135,4 +141,20 @@
 
 @utility no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* {{variables}} in request fields: one colour when the active environment defines them, another when it does not. */
+.wm-variable-defined,
+.wm-variable-missing {
+  border-radius: 3px;
+}
+
+.wm-variable-defined {
+  color: var(--variable-defined);
+  background: color-mix(in srgb, var(--variable-defined) 16%, transparent);
+}
+
+.wm-variable-missing {
+  color: var(--variable-missing);
+  background: color-mix(in srgb, var(--variable-missing) 16%, transparent);
 }
