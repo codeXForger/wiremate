@@ -47,6 +47,18 @@ describe('HTTP editor', () => {
     expect(screen.getByText('x-echo')).toBeInTheDocument()
   })
 
+  it('shows the method in the sidebar and the tab, and follows changes', async () => {
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    const treeItem = screen.getByRole('treeitem', { name: /List users/ })
+    const tab = screen.getByRole('tab', { name: /List users/ })
+    expect(within(treeItem).getByTitle('GET')).toHaveTextContent('GET')
+    expect(within(tab).getByTitle('GET')).toHaveStyle({ color: 'var(--method-get)' })
+    await choose(user, 'Method', /^DELETE$/)
+    expect(within(treeItem).getByTitle('DELETE')).toHaveTextContent('DEL')
+    expect(within(tab).getByTitle('DELETE')).toBeInTheDocument()
+  })
+
   it('edits the body and auth', async () => {
     const { user } = await renderApp()
     await openRequest(user, 'API', /List users/)

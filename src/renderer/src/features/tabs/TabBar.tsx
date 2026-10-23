@@ -5,7 +5,7 @@ import type { AnyRequest } from '@shared/types/protocol'
 import type { TestSuite } from '@shared/types/suite'
 import { itemKeyHandler } from '@/components/item-keys'
 import { ItemName } from '@/components/ItemName'
-import { ProtocolBadge } from '@/components/ProtocolBadge'
+import { RequestBadge } from '@/components/RequestBadge'
 import { RenameInput, type Renameable } from '@/components/RenameInput'
 import { wireColor } from '@/components/wire'
 import { cn } from '@/lib/utils'
@@ -73,7 +73,7 @@ function RequestTab({ id }: { id: string }) {
 }
 
 function RequestTabContent({ request }: { request: AnyRequest }) {
-  const icon = <ProtocolBadge protocol={request.protocol} className="w-auto" />
+  const icon = <RequestBadge requestId={request.id} protocol={request.protocol} className="w-auto" />
   return <TabShell target={request} accent={wireColor(request.protocol)} icon={icon} />
 }
 

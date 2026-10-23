@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { ChevronRight, Folder } from 'lucide-react'
 import type { TreeNode } from '@shared/types/workspace'
-import { ProtocolBadge } from '@/components/ProtocolBadge'
+import { RequestBadge } from '@/components/RequestBadge'
 import { cn } from '@/lib/utils'
 import { ItemName } from '@/components/ItemName'
 import { RenameInput } from '@/components/RenameInput'
@@ -54,7 +54,7 @@ function TreeRow({ node, depth, item, ...triggerProps }: TreeRowProps) {
 }
 
 function NodeIcon({ node, expanded }: { node: TreeNode; expanded: boolean }) {
-  if (node.protocol) return <ProtocolBadge protocol={node.protocol} />
+  if (node.protocol) return <RequestBadge requestId={node.id} protocol={node.protocol} />
   return (
     <span className="flex w-9 shrink-0 items-center text-muted-foreground">
       <ChevronRight className={cn('size-3 transition-transform', expanded && 'rotate-90')} />

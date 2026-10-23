@@ -29,6 +29,14 @@
   --wire-kafka: #5d6880;
   --wire-mqtt: #c94a63;
   --wire-mcp: #3f9c3a;
+
+  --method-get: #2f8f5b;
+  --method-post: #b07a12;
+  --method-put: #2f7fd6;
+  --method-patch: #7a52c7;
+  --method-delete: #c24141;
+  --method-head: #5e6678;
+  --method-options: #5e6678;
 }
 
 .dark {
@@ -54,6 +62,14 @@
   --wire-kafka: #9aa5b8;
   --wire-mqtt: #ef6f86;
   --wire-mcp: #6fcf6a;
+
+  --method-get: #5cc48a;
+  --method-post: #e0b04a;
+  --method-put: #4f9cf0;
+  --method-patch: #a98af0;
+  --method-delete: #e06a6a;
+  --method-head: #8a93a8;
+  --method-options: #8a93a8;
 }
 
 @theme inline {

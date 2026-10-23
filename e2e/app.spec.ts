@@ -128,7 +128,7 @@ test('builds and runs a test suite', async () => {
   await page.getByRole('button', { name: 'New suite' }).click()
   const editor = page.getByRole('region', { name: 'Suite 1 suite' })
   await editor.getByRole('button', { name: 'Add request or folder' }).click()
-  await page.getByRole('menuitem', { name: 'HTTP request' }).click()
+  await page.getByRole('menuitem', { name: 'GET HTTP request' }).click()
   await editor.getByRole('button', { name: 'Run suite' }).click()
   await editor.getByRole('tab', { name: 'Results' }).click()
   await expect(editor.getByRole('status', { name: 'Run summary' })).toContainText('1 passed, 0 failed')

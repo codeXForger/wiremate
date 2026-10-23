@@ -19,7 +19,8 @@ function addHttpRequest(name: string, config: Partial<HttpConfig>): string {
 
 async function addToSuite(user: User, name: string) {
   await user.click(screen.getByRole('button', { name: 'Add request or folder' }))
-  await user.click(await screen.findByRole('menuitem', { name }))
+  // Request entries start with their method badge ("GET List users").
+  await user.click(await screen.findByRole('menuitem', { name: new RegExp(`^(GET )?${name}$`) }))
 }
 
 async function newSuite(user: User) {
