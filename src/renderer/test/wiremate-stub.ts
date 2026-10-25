@@ -15,7 +15,6 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     onBeforeClose: vi.fn(),
     chooseReportFile: vi.fn().mockResolvedValue('/reports/run.pdf'),
     savePdfReport: vi.fn().mockResolvedValue(undefined),
-    openReport: vi.fn().mockResolvedValue(undefined),
     runScript: vi.fn(),
     listWorkspaces: vi.fn().mockResolvedValue([]),
     createWorkspace: vi.fn(),

@@ -20,13 +20,9 @@ function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<
   return Promise.race([work, timeout]).finally(() => clearTimeout(timer))
 }
 
-/**
- * Writes suite runs as PDF reports. It only writes to a path the user picked in the save dialog (`allow`), and only
- * opens files it wrote (`wasSaved`), so the renderer cannot name any other file.
- */
+/** Writes suite runs as PDF reports, only to a path the user just picked in the save dialog (`allow`). */
 export class PdfReports {
   private readonly allowed = new Set<string>()
-  private readonly saved = new Set<string>()
 
   public constructor(private readonly deps: PdfReportDependencies) {}
 
@@ -42,10 +38,5 @@ export class PdfReports {
     const html = runReportHtml(valid, (this.deps.now ?? Date.now)())
     const pdf = await withTimeout(this.deps.render(html), ms, `Creating the PDF took longer than ${ms / 1000} s`)
     await this.deps.write(path, pdf)
-    this.saved.add(path)
-  }
-
-  public wasSaved(path: string): boolean {
-    return this.saved.has(path)
   }
 }

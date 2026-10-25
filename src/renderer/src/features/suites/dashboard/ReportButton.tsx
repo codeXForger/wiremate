@@ -5,13 +5,17 @@ import { errorMessage } from '@shared/scripting/describe'
 import { reportFileName } from '@shared/suites/report-html'
 import type { SuiteRun } from '@shared/types/suite'
 import { Button } from '@/components/ui/button'
+import { useToastStore } from '@/stores/toast-store'
 
-type SaveState =
-  { status: 'idle' | 'choosing' | 'creating' } | { status: 'saved'; path: string } | { status: 'failed'; error: string }
+type Step = 'idle' | 'choosing' | 'creating'
 
 export const STALE_APP = 'Restart WireMate to finish updating, then try again.'
 
-const LABEL = { idle: 'Download PDF', choosing: 'Choose where to save…', creating: 'Creating PDF…' }
+const LABEL: Record<Step, string> = {
+  idle: 'Download PDF',
+  choosing: 'Choose where to save…',
+  creating: 'Creating PDF…'
+}
 
 /** A window opened before an update can have the new screen but an old bridge or main process. */
 function describe(error: unknown): string {
@@ -21,60 +25,45 @@ function describe(error: unknown): string {
 
 type ReportBridge = Pick<WireMateApi, 'chooseReportFile' | 'savePdfReport'>
 
-function reportBridge(): ReportBridge | null {
+function reportBridge(): ReportBridge {
   const bridge = window.wiremate as Partial<WireMateApi> | undefined
-  if (typeof bridge?.chooseReportFile !== 'function' || typeof bridge.savePdfReport !== 'function') return null
+  if (typeof bridge?.chooseReportFile !== 'function' || typeof bridge.savePdfReport !== 'function') {
+    throw new Error(STALE_APP)
+  }
   return bridge as ReportBridge
 }
 
-async function saveReport(run: SuiteRun, setState: (state: SaveState) => void): Promise<void> {
+/** Choose a file, create the PDF, then say where it went. */
+async function saveReport(run: SuiteRun, setStep: (step: Step) => void): Promise<void> {
   const bridge = reportBridge()
-  if (!bridge) throw new Error(STALE_APP)
-  setState({ status: 'choosing' })
+  setStep('choosing')
   const path = await bridge.chooseReportFile(reportFileName(run))
-  if (path === null) {
-    setState({ status: 'idle' })
-    return
-  }
-  setState({ status: 'creating' })
+  if (path === null) return
+  setStep('creating')
   await bridge.savePdfReport(run, path)
-  setState({ status: 'saved', path })
+  useToastStore.getState().show({ tone: 'success', title: 'Report saved', detail: path })
 }
 
-/** Saves the run as a PDF report where the user chooses, showing each step, then offers to open it. */
-function useSaveReport(run: SuiteRun): { state: SaveState; save: () => void } {
-  const [state, setState] = useState<SaveState>({ status: 'idle' })
+function useSaveReport(run: SuiteRun): { step: Step; save: () => void } {
+  const [step, setStep] = useState<Step>('idle')
   const save = (): void => {
-    saveReport(run, setState).catch((error: unknown) => setState({ status: 'failed', error: describe(error) }))
+    saveReport(run, setStep)
+      .catch((error: unknown) =>
+        useToastStore.getState().show({ tone: 'error', title: 'Could not save the report', detail: describe(error) })
+      )
+      .finally(() => setStep('idle'))
   }
-  return { state, save }
+  return { step, save }
 }
 
+/** Saves the run as a PDF report where the user chooses, showing each step; a toast confirms or explains. */
 export function ReportButton({ run }: { run: SuiteRun }) {
-  const { state, save } = useSaveReport(run)
-  const busy = state.status === 'choosing' || state.status === 'creating'
+  const { step, save } = useSaveReport(run)
   if (!window.wiremate) return null
+  const busy = step !== 'idle'
   return (
-    <span className="flex items-center gap-2 text-xs">
-      <SaveOutcome state={state} />
-      <Button size="sm" disabled={busy} onClick={save}>
-        {busy ? <LoaderCircle className="animate-spin" /> : <FileDown />} {busy ? LABEL[state.status] : LABEL.idle}
-      </Button>
-    </span>
-  )
-}
-
-function SaveOutcome({ state }: { state: SaveState }) {
-  if (state.status === 'failed')
-    return <span role="alert" className="text-destructive">{`Could not save: ${state.error}`}</span>
-  if (state.status !== 'saved') return null
-  const open = (): void => void window.wiremate?.openReport(state.path)
-  return (
-    <span className="flex items-center gap-1 text-muted-foreground">
-      PDF saved
-      <Button variant="ghost" size="sm" onClick={open}>
-        Open
-      </Button>
-    </span>
+    <Button size="sm" disabled={busy} onClick={save}>
+      {busy ? <LoaderCircle className="animate-spin" /> : <FileDown />} {LABEL[step]}
+    </Button>
   )
 }

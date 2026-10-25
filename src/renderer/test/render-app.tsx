@@ -9,6 +9,7 @@ import { MemorySuiteRepository } from '@/services/suite-repository'
 import { MemoryWorkspaceRepository } from '@/services/workspace-repository'
 import { useSessionVariables } from '@/stores/session-variables'
 import { useSuiteStore } from '@/stores/suite-store'
+import { useToastStore } from '@/stores/toast-store'
 import { saveQueue } from '@/stores/workspace-persistence'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
@@ -28,6 +29,7 @@ export function resetStores({ keepStorage = false } = {}): void {
   useConsoleStore.setState(useConsoleStore.getInitialState(), true)
   useSessionVariables.setState(useSessionVariables.getInitialState(), true)
   useSuiteStore.setState(useSuiteStore.getInitialState(), true)
+  useToastStore.setState(useToastStore.getInitialState(), true)
   saveQueue.clear()
   saveQueue.delayMs = TEST_SAVE_DELAY_MS
   if (keepStorage) return

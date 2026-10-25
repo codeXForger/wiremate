@@ -21,14 +21,12 @@ function setup(render = vi.fn<Render>((html) => Promise.resolve(new TextEncoder(
 }
 
 describe('PdfReports', () => {
-  it('writes the report to a chosen path and remembers it', async () => {
+  it('writes the report to a chosen path', async () => {
     const { reports, render, write } = setup()
     reports.allow('/out/report.pdf')
     await reports.write(run, '/out/report.pdf')
     expect(render.mock.calls[0]?.[0]).toContain('Smoke — test run report')
     expect(write).toHaveBeenCalledWith('/out/report.pdf', new TextEncoder().encode('<!doctype html>'))
-    expect(reports.wasSaved('/out/report.pdf')).toBe(true)
-    expect(reports.wasSaved('/etc/passwd')).toBe(false)
   })
 
   it('only writes to a path the user chose, and only once', async () => {
@@ -46,6 +44,5 @@ describe('PdfReports', () => {
     await expect(reports.write({ ...run, id: '../x' }, '/out/a.pdf')).rejects.toThrow()
     reports.allow('/out/a.pdf')
     await expect(reports.write(run, '/out/a.pdf')).rejects.toThrow('Creating the PDF took longer than 0.05 s')
-    expect(reports.wasSaved('/out/a.pdf')).toBe(false)
   })
 })

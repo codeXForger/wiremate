@@ -167,7 +167,8 @@ describe('test suites', () => {
     expect(useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]?.[0]?.stopped).toBe(true)
   })
 
-  it('saves the run as a PDF report in two visible steps, then opens it', async () => {
+  it('saves the run as a PDF report in two visible steps, then says where in a toast', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     const bridge = installBridge()
     const { user } = await renderApp()
     const editor = await newSuite(user)
@@ -189,38 +190,49 @@ describe('test suites', () => {
     expect(await within(header).findByRole('button', { name: 'Creating PDF…' })).toBeDisabled()
     expect(bridge.savePdfReport).toHaveBeenCalledWith(run, '/reports/run.pdf')
     act(() => create())
-    expect(await within(header).findByText('PDF saved')).toBeInTheDocument()
-    await user.click(within(header).getByRole('button', { name: 'Open' }))
-    expect(bridge.openReport).toHaveBeenCalledWith('/reports/run.pdf')
+
+    const toast = await screen
+      .findByRole('status', { name: '' })
+      .catch(() => screen.getByText('Report saved').closest('li')!)
+    expect(toast).toHaveTextContent('Report saved/reports/run.pdf')
+    expect(await within(header).findByRole('button', { name: 'Download PDF' })).toBeEnabled()
+    await act(() => vi.advanceTimersByTimeAsync(5000))
+    expect(screen.queryByText('Report saved')).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 
-  it('goes back to the button when cancelled and explains failures', async () => {
+  it('goes back to the button when cancelled and explains failures in a toast', async () => {
     const bridge = installBridge()
     const { user } = await renderApp()
     const editor = await newSuite(user)
     await addToSuite(user, 'List users')
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
     const { header } = await dashboard(editor)
-    const download = () => user.click(within(header).getByRole('button', { name: /Download PDF|Could not/ }))
+    const download = () => user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    const notifications = () => screen.getByRole('list', { name: 'Notifications' })
 
     vi.mocked(bridge.chooseReportFile).mockResolvedValueOnce(null)
     await download()
     expect(await within(header).findByRole('button', { name: 'Download PDF' })).toBeEnabled()
     expect(bridge.savePdfReport).not.toHaveBeenCalled()
+    expect(within(notifications()).queryAllByRole('listitem')).toHaveLength(0)
 
     vi.mocked(bridge.savePdfReport).mockRejectedValueOnce(new Error('disk full'))
     await download()
-    expect(await within(header).findByRole('alert')).toHaveTextContent('Could not save: disk full')
+    expect(await within(notifications()).findByRole('alert')).toHaveTextContent('Could not save the reportdisk full')
+    await user.click(within(notifications()).getByRole('button', { name: 'Dismiss' }))
+    expect(within(notifications()).queryByRole('alert')).not.toBeInTheDocument()
 
     vi.mocked(bridge.chooseReportFile).mockRejectedValueOnce(
       new Error("No handler registered for 'report:choose-file'")
     )
-    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
-    expect(await within(header).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
+    await download()
+    expect(await within(notifications()).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
+    await user.click(within(notifications()).getByRole('button', { name: 'Dismiss' }))
 
     window.wiremate = { ...bridge, chooseReportFile: undefined } as unknown as typeof bridge
-    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
-    expect(await within(header).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
+    await download()
+    expect(await within(notifications()).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
   })
 
   it('offers no PDF outside the desktop app', async () => {

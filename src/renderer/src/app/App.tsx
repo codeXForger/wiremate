@@ -1,4 +1,5 @@
 import '@/features/protocols'
+import { Toaster } from '@/components/Toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AppDialogs } from './AppDialogs'
 import { AppShell } from './AppShell'
@@ -14,6 +15,7 @@ export function App() {
     <TooltipProvider delayDuration={400}>
       <AppShell />
       <AppDialogs />
+      <Toaster />
     </TooltipProvider>
   )
 }

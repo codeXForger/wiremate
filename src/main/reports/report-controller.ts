@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { IpcChannel } from '@shared/ipc'
 import type { SuiteRun } from '@shared/types/suite'
 import { PdfReports } from './pdf-reports'
@@ -29,7 +29,7 @@ async function renderPdf(html: string): Promise<Uint8Array> {
   }
 }
 
-/** Saves suite runs as PDF reports in two steps the renderer can show (choose a file, then create it), and opens them. */
+/** Saves suite runs as PDF reports in two steps the renderer can show: choose a file, then create it. */
 export class ReportController {
   private readonly reports = new PdfReports({ render: renderPdf, write: writeFile })
 
@@ -40,8 +40,5 @@ export class ReportController {
       return path
     })
     ipcMain.handle(IpcChannel.savePdfReport, (_event, run: SuiteRun, path: string) => this.reports.write(run, path))
-    ipcMain.handle(IpcChannel.openReport, async (_event, path: string) => {
-      if (this.reports.wasSaved(path)) await shell.openPath(path)
-    })
   }
 }
