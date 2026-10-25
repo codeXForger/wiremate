@@ -30,8 +30,16 @@ export class ScriptRunner {
       const fail = (message: string): void => finish(ScriptRunner.failure(run, message))
       const timer = setTimeout(() => fail(`Script timed out after ${this.timeoutMs} ms`), this.timeoutMs)
       worker.once('message', finish)
-      worker.once('error', (error: unknown) => fail(errorMessage(error)))
+      worker.once('error', (error: unknown) => fail(ScriptRunner.describe(error)))
     })
+  }
+
+  /** A missing worker file means the app was rebuilt underneath it; say so instead of showing a bare path. */
+  private static describe(error: unknown): string {
+    const missing = typeof error === 'object' && error !== null && 'code' in error && error.code === 'MODULE_NOT_FOUND'
+    return missing
+      ? `The script runner could not be loaded; restart WireMate. (${errorMessage(error)})`
+      : errorMessage(error)
   }
 
   private static failure(run: ScriptRun, error: string): ScriptOutcome {

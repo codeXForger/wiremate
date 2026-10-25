@@ -39,6 +39,11 @@ describe('ScriptRunner', () => {
     expect(outcome).toEqual({ request: run.request, variables: run.variables, tests: [], logs: [], error })
   })
 
+  it('explains a missing worker file', async () => {
+    const outcome = await new ScriptRunner({ workerPath: join(dir, 'gone.cjs') }).run(run)
+    expect(outcome.error).toMatch(/^The script runner could not be loaded; restart WireMate\. \(Cannot find module/)
+  })
+
   it('reports a worker crash as a script error', async () => {
     const workerPath = workerFile('crash', "throw new Error('crashed')")
     const outcome = await new ScriptRunner({ workerPath }).run(run)
