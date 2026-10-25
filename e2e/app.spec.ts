@@ -208,7 +208,7 @@ test('builds and runs a test suite', async () => {
     dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
   }, pdfPath)
   await editor.getByRole('button', { name: 'Download PDF' }).click()
-  await expect(editor.getByText('PDF saved')).toBeVisible()
+  await expect(editor.getByText('PDF saved')).toBeVisible({ timeout: 15_000 })
   expect(readFileSync(pdfPath).subarray(0, 5).toString()).toBe('%PDF-')
   if (process.env['SCREENSHOTS']) copyFileSync(pdfPath, 'test-results/report.pdf')
   await editor.getByRole('tab', { name: 'History 1' }).click()

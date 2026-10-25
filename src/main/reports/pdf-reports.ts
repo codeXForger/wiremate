@@ -1,32 +1,48 @@
-import { reportFileName, runReportHtml } from '@shared/suites/report-html'
+import { runReportHtml } from '@shared/suites/report-html'
 import { SuiteRunSchema } from '@shared/suites/suite-schema'
 import type { SuiteRun } from '@shared/types/suite'
 
-/** Asks where to save, suggesting a file name; null when the user cancels. */
-export type ChooseFile = (suggestedName: string) => Promise<string | null>
+export const RENDER_TIMEOUT_MS = 30_000
 
 export interface PdfReportDependencies {
   /** Turns an HTML page into PDF bytes. */
   render: (html: string) => Promise<Uint8Array>
   write: (path: string, data: Uint8Array) => Promise<void>
   now?: () => number
+  timeoutMs?: number
 }
 
-/** Saves suite runs as PDF reports, and remembers which files it wrote: only those may be opened from the app. */
+function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms)
+  })
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer))
+}
+
+/**
+ * Writes suite runs as PDF reports. It only writes to a path the user picked in the save dialog (`allow`), and only
+ * opens files it wrote (`wasSaved`), so the renderer cannot name any other file.
+ */
 export class PdfReports {
+  private readonly allowed = new Set<string>()
   private readonly saved = new Set<string>()
 
   public constructor(private readonly deps: PdfReportDependencies) {}
 
-  /** Returns where the report was saved, or null when the user cancelled. */
-  public async save(run: SuiteRun, chooseFile: ChooseFile): Promise<string | null> {
+  /** Records a path the user chose in the save dialog. */
+  public allow(path: string): void {
+    this.allowed.add(path)
+  }
+
+  public async write(run: SuiteRun, path: string): Promise<void> {
+    if (!this.allowed.delete(path)) throw new Error('Choose where to save the report first')
     const valid = SuiteRunSchema.parse(run)
-    const path = await chooseFile(reportFileName(valid))
-    if (path === null) return null
-    const pdf = await this.deps.render(runReportHtml(valid, (this.deps.now ?? Date.now)()))
+    const ms = this.deps.timeoutMs ?? RENDER_TIMEOUT_MS
+    const html = runReportHtml(valid, (this.deps.now ?? Date.now)())
+    const pdf = await withTimeout(this.deps.render(html), ms, `Creating the PDF took longer than ${ms / 1000} s`)
     await this.deps.write(path, pdf)
     this.saved.add(path)
-    return path
   }
 
   public wasSaved(path: string): boolean {

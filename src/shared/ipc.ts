@@ -30,6 +30,7 @@ export const IpcChannel = {
   deleteSuite: 'suites:delete',
   listRuns: 'runs:list',
   saveRun: 'runs:save',
+  chooseReportFile: 'report:choose-file',
   savePdfReport: 'report:save-pdf',
   openReport: 'report:open'
 } as const
@@ -72,8 +73,10 @@ export interface WireMateApi extends WorkspaceStorageApi, SuiteStorageApi {
   sendHttp(request: WireRequest, transferId?: string): Promise<HttpResult>
   cancelHttp(transferId: string): Promise<void>
   runScript(run: ScriptRun): Promise<ScriptOutcome>
-  /** Saves a finished run as a PDF where the user chooses; resolves to the path, or null when cancelled. */
-  savePdfReport(run: SuiteRun): Promise<string | null>
+  /** Asks where to save a report, suggesting a file name; resolves to the path, or null when cancelled. */
+  chooseReportFile(suggestedName: string): Promise<string | null>
+  /** Creates the PDF of a finished run at a path the user just chose with `chooseReportFile`. */
+  savePdfReport(run: SuiteRun, path: string): Promise<void>
   /** Opens a report this app saved; any other path is ignored. */
   openReport(path: string): Promise<void>
   /** Registers the work to finish (pending saves) before the window closes. */

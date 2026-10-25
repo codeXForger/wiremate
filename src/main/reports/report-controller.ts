@@ -29,14 +29,17 @@ async function renderPdf(html: string): Promise<Uint8Array> {
   }
 }
 
-/** Saves a suite run as a PDF report, and opens reports it saved. */
+/** Saves suite runs as PDF reports in two steps the renderer can show (choose a file, then create it), and opens them. */
 export class ReportController {
   private readonly reports = new PdfReports({ render: renderPdf, write: writeFile })
 
   public register(): void {
-    ipcMain.handle(IpcChannel.savePdfReport, (event, run: SuiteRun) =>
-      this.reports.save(run, (name) => chooseFile(event.sender, name))
-    )
+    ipcMain.handle(IpcChannel.chooseReportFile, async (event, suggestedName: string) => {
+      const path = await chooseFile(event.sender, suggestedName)
+      if (path !== null) this.reports.allow(path)
+      return path
+    })
+    ipcMain.handle(IpcChannel.savePdfReport, (_event, run: SuiteRun, path: string) => this.reports.write(run, path))
     ipcMain.handle(IpcChannel.openReport, async (_event, path: string) => {
       if (this.reports.wasSaved(path)) await shell.openPath(path)
     })

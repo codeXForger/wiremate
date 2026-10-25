@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { HttpConfig } from '@shared/types/protocol'
 import { services } from '@/services'
@@ -167,26 +167,60 @@ describe('test suites', () => {
     expect(useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]?.[0]?.stopped).toBe(true)
   })
 
-  it('saves the run as a PDF report and opens it', async () => {
+  it('saves the run as a PDF report in two visible steps, then opens it', async () => {
     const bridge = installBridge()
     const { user } = await renderApp()
     const editor = await newSuite(user)
     await addToSuite(user, 'List users')
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
     const { header } = await dashboard(editor)
-    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
     const run = useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]![0]!
-    expect(bridge.savePdfReport).toHaveBeenCalledWith(run)
+
+    let choose: (path: string | null) => void = () => undefined
+    let create: () => void = () => undefined
+    vi.mocked(bridge.chooseReportFile).mockReturnValueOnce(new Promise((resolve) => (choose = resolve)))
+    vi.mocked(bridge.savePdfReport).mockReturnValueOnce(new Promise((resolve) => (create = () => resolve())))
+    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    expect(within(header).getByRole('button', { name: 'Choose where to save…' })).toBeDisabled()
+    expect(bridge.chooseReportFile).toHaveBeenCalledWith(
+      expect.stringMatching(/^Suite 1 \d{4}-\d\d-\d\d \d\d-\d\d\.pdf$/)
+    )
+    act(() => choose('/reports/run.pdf'))
+    expect(await within(header).findByRole('button', { name: 'Creating PDF…' })).toBeDisabled()
+    expect(bridge.savePdfReport).toHaveBeenCalledWith(run, '/reports/run.pdf')
+    act(() => create())
     expect(await within(header).findByText('PDF saved')).toBeInTheDocument()
     await user.click(within(header).getByRole('button', { name: 'Open' }))
     expect(bridge.openReport).toHaveBeenCalledWith('/reports/run.pdf')
+  })
 
-    vi.mocked(bridge.savePdfReport).mockResolvedValueOnce(null)
-    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
-    await waitFor(() => expect(within(header).queryByText('PDF saved')).not.toBeInTheDocument())
+  it('goes back to the button when cancelled and explains failures', async () => {
+    const bridge = installBridge()
+    const { user } = await renderApp()
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
+    const { header } = await dashboard(editor)
+    const download = () => user.click(within(header).getByRole('button', { name: /Download PDF|Could not/ }))
+
+    vi.mocked(bridge.chooseReportFile).mockResolvedValueOnce(null)
+    await download()
+    expect(await within(header).findByRole('button', { name: 'Download PDF' })).toBeEnabled()
+    expect(bridge.savePdfReport).not.toHaveBeenCalled()
+
     vi.mocked(bridge.savePdfReport).mockRejectedValueOnce(new Error('disk full'))
+    await download()
+    expect(await within(header).findByRole('alert')).toHaveTextContent('Could not save: disk full')
+
+    vi.mocked(bridge.chooseReportFile).mockRejectedValueOnce(
+      new Error("No handler registered for 'report:choose-file'")
+    )
     await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
-    expect(await within(header).findByText('Could not save: disk full')).toBeInTheDocument()
+    expect(await within(header).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
+
+    window.wiremate = { ...bridge, chooseReportFile: undefined } as unknown as typeof bridge
+    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    expect(await within(header).findByText(/Restart WireMate to finish updating/)).toBeInTheDocument()
   })
 
   it('offers no PDF outside the desktop app', async () => {
