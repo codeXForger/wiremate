@@ -47,8 +47,19 @@ describe('query params', () => {
     expect(syncUrlAndParams({ ...base, url: 'http://h?b=2', params: [] }).params).toMatchObject([
       { key: 'b', value: '2' }
     ])
-    const synced = { ...base, url: 'http://h?a=1', params: [row('1', 'a', '1')] }
+    const synced = { ...base, url: 'http://h?a=1', params: [row('1', 'a', '1'), off('2', 'b', '2')] }
     expect(syncUrlAndParams(synced)).toBe(synced)
+    const mixed = syncUrlAndParams({
+      ...base,
+      url: 'http://h?page=2',
+      params: [row('1', 'limit', '10'), off('2', 'x', '1')]
+    })
+    expect(mixed.url).toBe('http://h?page=2&limit=10')
+    expect(mixed.params.map((p) => [p.key, p.enabled])).toEqual([
+      ['page', true],
+      ['limit', true],
+      ['x', false]
+    ])
     const file = {
       id: 'req_1',
       name: 'R',

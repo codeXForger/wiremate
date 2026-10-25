@@ -53,14 +53,21 @@ export function paramsFromUrl(url: string, params: KeyValue[]): KeyValue[] {
   return [...kept, ...pairs.map((pair) => createKeyValue(pair.key, pair.value))]
 }
 
+/** True when the URL's query lists exactly the enabled params, in order: the state the editor keeps. */
+function inStep(config: HttpConfig): boolean {
+  const pairs = parseQuery(splitUrl(config.url).query ?? '')
+  const enabled = enabledParams(config.params)
+  const matches = (pair: { key: string; value: string }, row: KeyValue | undefined): boolean =>
+    row !== undefined && row.key === pair.key && row.value === pair.value
+  return pairs.length === enabled.length && pairs.every((pair, i) => matches(pair, enabled[i]))
+}
+
 /**
- * Brings a saved config in line with the rule that the URL shows the enabled params: older requests kept params
- * out of the URL, and hand-edited ones may have a query but no params.
+ * Brings a saved config in line with the rule that the URL shows the enabled params. Older versions sent the URL
+ * (with whatever query was typed) followed by the params, so that is the order they are merged in.
  */
 export function syncUrlAndParams(config: HttpConfig): HttpConfig {
-  const { query } = splitUrl(config.url)
-  if (query === null && enabledParams(config.params).length > 0)
-    return { ...config, url: urlWithParams(config.url, config.params) }
-  if (query !== null && config.params.length === 0) return { ...config, params: paramsFromUrl(config.url, []) }
-  return config
+  if (inStep(config)) return config
+  const params = [...paramsFromUrl(config.url, []), ...config.params]
+  return { ...config, params, url: urlWithParams(config.url, params) }
 }
