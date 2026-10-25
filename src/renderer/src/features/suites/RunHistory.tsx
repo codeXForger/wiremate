@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSuiteStore } from '@/stores/suite-store'
 import { describeRun } from './run-caption'
+import { viewOfRun } from './dashboard/run-view'
 import { RunReport } from './RunReport'
 
 const NO_RUNS: SuiteRun[] = []
@@ -33,7 +34,7 @@ function PastRun({ run, onBack }: { run: SuiteRun; onBack: () => void }) {
       <Button variant="ghost" className="m-1.5 self-start" onClick={onBack}>
         <ArrowLeft /> All runs
       </Button>
-      <RunReport results={run.results} summary={run.summary} caption={describeRun(run)} />
+      <RunReport view={viewOfRun(run)} />
     </div>
   )
 }

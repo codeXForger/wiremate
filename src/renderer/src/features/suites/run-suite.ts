@@ -29,10 +29,17 @@ export function stopSuite(suiteId: string): void {
 
 function startRun(suite: TestSuite): SuiteRunInput {
   const steps = expandSuite(suite.items, useWorkspaceStore.getState())
-  useSuiteStore.getState().startRun(suite.id, steps.length)
+  const meta = { total: steps.length, startedAt: Date.now(), environmentName: environmentName() }
+  useSuiteStore.getState().startRun(suite.id, meta)
   const controller = new AbortController()
   running.set(suite.id, controller)
-  return { suite, steps, variables: activeVariables(), environmentName: environmentName(), signal: controller.signal }
+  return {
+    suite,
+    steps,
+    variables: activeVariables(),
+    environmentName: meta.environmentName,
+    signal: controller.signal
+  }
 }
 
 /** Runs a suite against the active environment, showing progress live and saving the run to its history. */

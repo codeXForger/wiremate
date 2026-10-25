@@ -7,6 +7,8 @@ import { useWorkspaceStore } from './workspace-store'
 export interface LiveRun {
   total: number
   results: RequestRunResult[]
+  startedAt: number
+  environmentName: string | null
 }
 
 type SuitePatch = Partial<Omit<TestSuite, 'id'>>
@@ -22,7 +24,7 @@ interface SuiteState {
   update: (id: string, patch: SuitePatch) => void
   remove: (id: string) => void
   loadHistory: (id: string) => Promise<void>
-  startRun: (id: string, total: number) => void
+  startRun: (id: string, run: Omit<LiveRun, 'results'>) => void
   addResult: (id: string, result: RequestRunResult) => void
   finishRun: (run: SuiteRun) => void
 }
@@ -95,7 +97,7 @@ export const useSuiteStore = create<SuiteState>()((set, get) => ({
   update: (id, patch) => updateOne(set, get, { id, patch }),
   remove: (id) => removeOne(set, get, id),
   loadHistory: (id) => loadHistory(set, get, id),
-  startRun: (id, total) => set({ live: { ...get().live, [id]: { total, results: [] } } }),
+  startRun: (id, run) => set({ live: { ...get().live, [id]: { ...run, results: [] } } }),
   addResult: (id, result) => addResult(set, get, { id, result }),
   finishRun: (run) => finishRun(set, get, run)
 }))

@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { HttpConfig } from '@shared/types/protocol'
 import { services } from '@/services'
@@ -23,6 +23,13 @@ async function addToSuite(user: User, ...names: string[]) {
   const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
   for (const name of names) await user.click(within(dialog).getByRole('checkbox', { name }))
   await user.click(within(dialog).getByRole('button', { name: `Add ${names.length}` }))
+}
+
+/** Waits for the run to finish, then gives its dashboard: the header and the stat tiles by label. */
+async function dashboard(editor: HTMLElement) {
+  const header = () => within(editor).getByRole('status', { name: 'Run summary' })
+  await waitFor(() => expect(header()).not.toHaveTextContent(/Running/))
+  return { header: header(), tile: (label: string) => within(editor).getByRole('group', { name: label }) }
 }
 
 async function newSuite(user: User) {
@@ -63,11 +70,25 @@ describe('test suites', () => {
     expect(within(list).getAllByRole('listitem')[0]).toHaveAccessibleName('1. List users')
 
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
-    await user.click(within(editor).getByRole('tab', { name: 'Results' }))
-    const summary = await within(editor).findByRole('status', { name: 'Run summary' })
-    expect(summary).toHaveTextContent('3 passed, 1 failed')
-    expect(summary).toHaveTextContent('Tests 1/1 passed')
+    const { header, tile } = await dashboard(editor)
+    expect(header).toHaveTextContent('1 failed')
+    expect(header).toHaveTextContent('Local')
+    expect(tile('Requests')).toHaveTextContent('Requests43 passed, 1 failed')
+    expect(tile('Tests')).toHaveTextContent('Tests11 passed, 0 failed')
+    expect(tile('Average response')).toHaveTextContent('over 3 responses')
+    expect(tile('Slowest')).toHaveTextContent('34 ms')
+    expect(within(editor).getByRole('group', { name: 'Pass rate' })).toHaveTextContent('100%of tests passed')
+    expect(
+      within(editor).getByRole('img', { name: 'Requests (4 of 4): 3 passed, 1 failed, 0 skipped' })
+    ).toBeInTheDocument()
+    expect(within(editor).getByRole('list', { name: 'Status codes' })).toHaveTextContent(
+      'Status codes2xx 3No response 1'
+    )
+    expect(within(editor).getByRole('listitem', { name: 'failed: Broken' })).toHaveTextContent('no response')
     const results = within(editor).getByRole('list', { name: 'Run results' })
+    await user.click(within(editor).getByRole('button', { name: 'Failed 1' }))
+    expect(Array.from(results.children).map((row) => row.getAttribute('aria-label'))).toEqual(['failed: Broken'])
+    await user.click(within(editor).getByRole('button', { name: 'All 4' }))
     expect(Array.from(results.children).map((row) => row.getAttribute('aria-label'))).toEqual([
       'passed: List users',
       'passed: List users',
@@ -111,10 +132,10 @@ describe('test suites', () => {
     expect(suite().items).toHaveLength(2)
 
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
-    await user.click(within(editor).getByRole('tab', { name: 'Results' }))
-    const summary = await within(editor).findByRole('status', { name: 'Run summary' })
-    expect(summary).toHaveTextContent('0 passed, 1 failed')
-    expect(summary).toHaveTextContent('1 skipped')
+    const { header, tile } = await dashboard(editor)
+    expect(header).toHaveTextContent('1 failed')
+    expect(tile('Requests')).toHaveTextContent('0 passed, 1 failed, 1 skipped')
+    expect(within(editor).getByRole('group', { name: 'Pass rate' })).toHaveTextContent('0%of requests passed')
   })
 
   it('stops a running suite', async () => {
@@ -129,11 +150,9 @@ describe('test suites', () => {
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
     await user.click(await within(editor).findByRole('button', { name: 'Stop run' }))
 
-    await user.click(within(editor).getByRole('tab', { name: 'Results' }))
-    const summary = await within(editor).findByRole('status', { name: 'Run summary' })
-    expect(summary).toHaveTextContent('1 passed, 0 failed')
-    expect(summary).toHaveTextContent('2 skipped')
-    expect(summary).toHaveTextContent('Stopped')
+    const { header, tile } = await dashboard(editor)
+    expect(header).toHaveTextContent('Stopped')
+    expect(tile('Requests')).toHaveTextContent('1 passed, 0 failed, 2 skipped')
     const results = within(editor).getByRole('list', { name: 'Run results' })
     expect(within(results).getByRole('listitem', { name: 'skipped: Hangs' })).toHaveTextContent(
       'Cancelled because the run was stopped'
@@ -150,7 +169,7 @@ describe('test suites', () => {
     expect(within(editor).getByRole('tab', { name: /^Requests/ })).toHaveAttribute('aria-selected', 'true')
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
     expect(within(editor).getByRole('tab', { name: 'Results' })).toHaveAttribute('aria-selected', 'true')
-    expect(await within(editor).findByRole('status', { name: 'Run summary' })).toHaveTextContent('1 passed')
+    expect((await dashboard(editor)).header).toHaveTextContent('All passed')
   })
 
   it('picks items in a searchable tree where a folder covers what is inside it', async () => {

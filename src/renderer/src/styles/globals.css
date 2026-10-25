@@ -40,6 +40,10 @@
 
   --variable-defined: #1f8a78;
   --variable-missing: #c24141;
+
+  /* Run dashboard: response-time bars (one series, one hue) and skipped requests (de-emphasis gray). */
+  --chart-duration: #5875a0;
+  --chart-skipped: #8891a2;
 }
 
 .dark {
@@ -76,6 +80,9 @@
 
   --variable-defined: #3fbfa8;
   --variable-missing: #ef6f6f;
+
+  --chart-duration: #7f9cc9;
+  --chart-skipped: #737b8f;
 }
 
 @theme inline {
