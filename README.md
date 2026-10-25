@@ -69,6 +69,7 @@ console.log('logged in as', wm.response.json().user.name)
 | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `wm.env.get / set / unset / has / all`                    | Active environment; kept for the session if none active                                              |
 | `wm.request.method / url / body / headers.get/set/remove` | Writable in the pre-request script                                                                   |
+| `wm.request.params.get / has / all / set / remove`        | Query params of the URL, decoded; `set` and `remove` rewrite it                                      |
 | `wm.response.status / statusText / time / size`           | Post-response only; `time` is in milliseconds                                                        |
 | `wm.response.headers.get(name) / text() / json()`         |                                                                                                      |
 | `wm.test(name, fn)`                                       | Fails when `fn` throws or its promise rejects                                                        |
