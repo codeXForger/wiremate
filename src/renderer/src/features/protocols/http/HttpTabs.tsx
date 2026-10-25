@@ -7,6 +7,7 @@ import { AuthPanel } from './AuthPanel'
 import { BodyPanel } from './BodyPanel'
 import { scriptCount } from './script-phases'
 import { ScriptsPanel } from './ScriptsPanel'
+import { useUrlParams } from './use-url-params'
 
 function countLabel(label: string, count: number): string {
   return count > 0 ? `${label} ${count}` : label
@@ -27,9 +28,10 @@ function scriptsTab(requestId: string, scripts: HttpScripts): PanelTab {
 
 export function HttpTabs({ requestId }: EditorProps) {
   const rows = useConfigBinder<'http', KeyValue[]>(requestId)
+  const { params } = useUrlParams(requestId)
   const scripts = useConfigBinder<'http', HttpScripts>(requestId)('scripts').value
   const tabs: PanelTab[] = [
-    rowsTab('params', 'Params', rows('params')),
+    rowsTab('params', 'Params', params),
     rowsTab('headers', 'Headers', rows('headers')),
     { value: 'body', label: 'Body', className: 'flex flex-col', content: <BodyPanel requestId={requestId} /> },
     { value: 'auth', label: 'Auth', content: <AuthPanel requestId={requestId} /> },

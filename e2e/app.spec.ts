@@ -94,6 +94,8 @@ test('saves edits on its own, and right away with Cmd/Ctrl+S', async () => {
   await url.press('End')
   await url.pressSequentially('?page=2')
   await expect(url).toHaveValue(`${base}/echo?page=2`)
+  await page.getByRole('tab', { name: 'Params 1' }).click()
+  await expect(page.getByRole('textbox', { name: 'Key' })).toHaveValue('page')
   await page.keyboard.press('ControlOrMeta+s')
   await expect(page.getByLabel('Unsaved changes')).toBeHidden()
 })

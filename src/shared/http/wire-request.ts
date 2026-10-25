@@ -2,6 +2,7 @@ import type { HeaderPair, WireRequest } from '../types/http'
 import type { HttpConfig, KeyValue } from '../types/protocol'
 import type { Variables } from '../types/scripting'
 import { interpolate } from '../utils/interpolate'
+import { urlWithParams } from './query-params'
 
 export interface ResolvedRequest {
   request: WireRequest
@@ -13,20 +14,6 @@ type Fill = (text: string) => string
 
 function activePairs(rows: KeyValue[]): HeaderPair[] {
   return rows.filter((row) => row.enabled && row.key.trim()).map(({ key, value }) => ({ key, value }))
-}
-
-/** URL-encodes text but leaves `{{placeholders}}` intact so they can still be filled in. */
-function encodeParam(text: string): string {
-  return text
-    .split(/(\{\{[^}]*\}\})/)
-    .map((part, index) => (index % 2 === 1 ? part : encodeURIComponent(part)))
-    .join('')
-}
-
-function withParams(url: string, params: HeaderPair[]): string {
-  if (params.length === 0) return url
-  const query = params.map(({ key, value }) => `${encodeParam(key)}=${encodeParam(value)}`).join('&')
-  return `${url}${url.includes('?') ? '&' : '?'}${query}`
 }
 
 function base64(text: string): string {
@@ -59,7 +46,8 @@ export function rawHttpRequest(config: HttpConfig): WireRequest {
   const headers = activePairs(config.headers)
   return {
     method: config.method,
-    url: withParams(config.url.trim(), activePairs(config.params)),
+    // The URL bar already shows the enabled params; rebuilding the query from them keeps the two in step.
+    url: urlWithParams(config.url.trim(), config.params),
     headers: [...headers, ...contentType(config, headers)],
     body: config.body.mode === 'none' ? null : config.body.content
   }

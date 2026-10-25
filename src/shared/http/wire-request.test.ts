@@ -22,14 +22,17 @@ describe('interpolate', () => {
 })
 
 describe('resolveHttpRequest', () => {
-  it('appends enabled params and keeps placeholders in them fillable', () => {
+  it('sends the enabled params as the query and fills placeholders in them', () => {
     const params = [
       createKeyValue('q', 'a b'),
       createKeyValue('id', '{{id}}'),
       { ...createKeyValue('x', '1'), enabled: false }
     ]
-    const { request } = resolveHttpRequest(config({ url: '{{base}}/s?page=1', params }), { base: 'http://h', id: '9' })
-    expect(request.url).toBe('http://h/s?page=1&q=a%20b&id=9')
+    const { request } = resolveHttpRequest(config({ url: '{{base}}/s?q=a b&id={{id}}#top', params }), {
+      base: 'http://h',
+      id: '9'
+    })
+    expect(request.url).toBe('http://h/s?q=a b&id=9#top')
   })
 
   it('skips the query string when there are no params', () => {

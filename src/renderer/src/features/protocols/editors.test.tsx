@@ -25,15 +25,18 @@ describe('HTTP editor', () => {
     await choose(user, 'Method', /^POST$/)
     await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '?page=1')
     expect(activeConfig()).toMatchObject({ method: 'POST', url: 'https://httpbin.org/get?page=1' })
+    expect(activeConfig()['params']).toMatchObject([{ key: 'page', value: '1', enabled: true }])
     expect(screen.getByLabelText('Unsaved changes')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add param' }))
-    await user.type(screen.getByRole('textbox', { name: 'Key' }), 'limit')
-    await user.type(screen.getByRole('textbox', { name: 'Value' }), '10')
+    await user.type(screen.getAllByRole('textbox', { name: 'Key' })[1]!, 'limit')
+    await user.type(screen.getAllByRole('textbox', { name: 'Value' })[1]!, '10')
+    expect(activeConfig()['url']).toBe('https://httpbin.org/get?page=1&limit=10')
     await user.click(screen.getByRole('checkbox', { name: 'Enable limit' }))
-    expect(activeConfig()['params']).toMatchObject([{ key: 'limit', value: '10', enabled: false }])
+    expect(activeConfig()['url']).toBe('https://httpbin.org/get?page=1')
+    expect(activeConfig()['params']).toMatchObject([{ key: 'page' }, { key: 'limit', value: '10', enabled: false }])
     await user.click(screen.getByRole('button', { name: 'Remove limit' }))
-    expect(activeConfig()['params']).toEqual([])
+    expect(activeConfig()['params']).toMatchObject([{ key: 'page', value: '1' }])
 
     await user.click(screen.getByRole('tab', { name: 'Headers 1' }))
     expect(screen.getByDisplayValue('Accept')).toBeInTheDocument()
@@ -57,6 +60,34 @@ describe('HTTP editor', () => {
     await choose(user, 'Method', /^DELETE$/)
     expect(within(treeItem).getByTitle('DELETE')).toHaveTextContent('DEL')
     expect(within(tab).getByTitle('DELETE')).toBeInTheDocument()
+  })
+
+  it('keeps the URL and the params table in step both ways', async () => {
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    const url = screen.getByRole('textbox', { name: 'Request URL' })
+    await user.clear(url)
+    await user.paste('https://api.test/users?role=admin&active&sort=name#top')
+    expect(screen.getByRole('tab', { name: 'Params 3' })).toBeInTheDocument()
+    expect(activeConfig()['params']).toMatchObject([
+      { key: 'role', value: 'admin' },
+      { key: 'active', value: '' },
+      { key: 'sort', value: 'name' }
+    ])
+
+    await user.clear(screen.getAllByRole('textbox', { name: 'Value' })[0]!)
+    await user.type(screen.getAllByRole('textbox', { name: 'Value' })[0]!, 'guest')
+    expect(url).toHaveValue('https://api.test/users?role=guest&active&sort=name#top')
+    await user.click(screen.getByRole('button', { name: 'Remove active' }))
+    expect(url).toHaveValue('https://api.test/users?role=guest&sort=name#top')
+    await user.click(screen.getByRole('checkbox', { name: 'Enable sort' }))
+    expect(url).toHaveValue('https://api.test/users?role=guest#top')
+
+    // Editing the URL keeps the switched-off param, and drops the ones taken out of the query.
+    await user.clear(url)
+    await user.paste('https://api.test/users')
+    expect(activeConfig()['params']).toMatchObject([{ key: 'sort', enabled: false }])
+    expect(screen.getByRole('tab', { name: 'Params 1' })).toBeInTheDocument()
   })
 
   it('edits the body and auth', async () => {

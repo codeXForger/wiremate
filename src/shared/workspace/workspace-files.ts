@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { CATEGORY_IDS } from '../protocols/categories'
 import { PROTOCOL_DEFAULTS } from '../protocols/defaults'
+import { syncUrlAndParams } from '../http/query-params'
 import { SafeId } from '../suites/suite-schema'
 import { PROTOCOL_IDS, type AnyRequest } from '../types/protocol'
 import type { WorkspaceSettings } from '../types/workspace'
@@ -67,5 +68,6 @@ export type RequestFile = z.infer<typeof RequestFileSchema>
 /** Fills in config fields a file lacks (written by an older version, or edited by hand) from the protocol defaults. */
 export function toRequestDocument(file: RequestFile): AnyRequest {
   const config = { ...PROTOCOL_DEFAULTS[file.protocol](), ...file.config }
-  return { ...file, config } as AnyRequest
+  const request = { ...file, config } as AnyRequest
+  return request.protocol === 'http' ? { ...request, config: syncUrlAndParams(request.config) } : request
 }
