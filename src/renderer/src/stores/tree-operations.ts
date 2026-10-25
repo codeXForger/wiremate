@@ -4,7 +4,15 @@ import { RequestFactory } from '@shared/protocols/request-factory'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
 import type { TreeNode } from '@shared/types/workspace'
 import { createId } from '@shared/utils/id'
-import { canMoveNode, collectSubtreeIds, renameNode, uniqueName } from '@/features/explorer/tree-utils'
+import {
+  canMoveNode,
+  canPlaceNode,
+  collectSubtreeIds,
+  placeNode,
+  renameNode,
+  uniqueName,
+  type PlacePosition
+} from '@/features/explorer/tree-utils'
 import type { TreeSlice } from './workspace-types'
 
 export type TreeData = Pick<TreeSlice, 'nodes' | 'requests'>
@@ -40,7 +48,9 @@ export function duplicateInTree(data: TreeData, id: string): Insertion | null {
   const name = uniqueName(data.nodes, node.parentId, `${source.name} copy`)
   const copy = { ...structuredClone(source), id: createId('req'), name }
   const requests = { ...data.requests, [copy.id]: copy }
-  return { id: copy.id, patch: { nodes: [...data.nodes, { ...node, id: copy.id, name }], requests } }
+  const index = data.nodes.indexOf(node) + 1
+  const nodes = [...data.nodes.slice(0, index), { ...node, id: copy.id, name }, ...data.nodes.slice(index)]
+  return { id: copy.id, patch: { nodes, requests } }
 }
 
 export function renameInTree(data: TreeData, id: string, name: string): TreeData {
@@ -68,8 +78,15 @@ export function patchConfig<P extends ProtocolId>(
   return { ...data, requests: { ...data.requests, [id]: updated } }
 }
 
+/** Moves a node into a folder (or the section root), as its last child. */
 export function moveInTree(data: TreeData, id: string, parentId: string | null): TreeData {
-  if (!canMoveNode(data.nodes, id, parentId)) return data
-  const nodes = data.nodes.map((node) => (node.id === id ? { ...node, parentId } : node))
-  return { ...data, nodes }
+  const node = data.nodes.find((candidate) => candidate.id === id)
+  if (!node || !canMoveNode(data.nodes, id, parentId)) return data
+  return { ...data, nodes: [...data.nodes.filter((other) => other.id !== id), { ...node, parentId }] }
+}
+
+/** Puts a node right before or after another one, which also moves it into that node's folder. */
+export function placeInTree(data: TreeData, id: string, target: { id: string; position: PlacePosition }): TreeData {
+  if (!canPlaceNode(data.nodes, id, target.id)) return data
+  return { ...data, nodes: placeNode(data.nodes, id, target) }
 }

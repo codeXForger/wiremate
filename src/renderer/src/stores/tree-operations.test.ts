@@ -21,8 +21,8 @@ describe('tree operations', () => {
     const copy = second.patch.requests[first.id]!
     expect(second.patch.nodes.filter((n) => n.parentId === folder.id).map((n) => n.name)).toEqual([
       'HTTP request',
-      'HTTP request copy',
-      'HTTP request copy 2'
+      'HTTP request copy 2',
+      'HTTP request copy'
     ])
     expect(copy).toMatchObject({ name: 'HTTP request copy', protocol: 'http' })
     expect(copy.id).not.toBe(original.id)

@@ -130,6 +130,31 @@ test('renames from a tab and cuts long names with an ellipsis', async () => {
   await tabs.getByRole('textbox', { name: 'Name' }).press('Enter')
 })
 
+test('orders requests inside a collection by dragging, and keeps the order on rename', async () => {
+  await page.getByRole('treeitem', { name: 'New collection' }).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'New request' }).click()
+  const tree = page.getByRole('tree', { name: 'API collections' })
+  const second = tree.getByRole('treeitem', { name: /HTTP request/ })
+  await second.dblclick()
+  await tree.getByRole('textbox', { name: 'Name' }).fill('Second')
+  await tree.getByRole('textbox', { name: 'Name' }).press('Enter')
+  await page.getByRole('textbox', { name: 'Request URL' }).fill(`${base}/echo?second=1`)
+  const names = () => tree.getByRole('treeitem').allTextContents()
+  await expect.poll(names).toEqual(['New collection', 'GETEcho', 'GETSecond'])
+
+  // Dropping on the top edge of a row puts the request above it.
+  await tree.getByRole('treeitem', { name: /Second/ }).dragTo(tree.getByRole('treeitem', { name: /Echo/ }), {
+    targetPosition: { x: 40, y: 3 }
+  })
+  await expect.poll(names).toEqual(['New collection', 'GETSecond', 'GETEcho'])
+  await screenshot('reordered')
+
+  await tree.getByRole('treeitem', { name: /Second/ }).dblclick()
+  await tree.getByRole('textbox', { name: 'Name' }).fill('Zulu')
+  await tree.getByRole('textbox', { name: 'Name' }).press('Enter')
+  await expect.poll(names).toEqual(['New collection', 'GETZulu', 'GETEcho'])
+})
+
 test('creates MQTT and WebSocket requests in their own sections', async () => {
   await section('MQTT').click()
   await page.getByRole('button', { name: 'New MQTT request' }).click()
@@ -149,7 +174,7 @@ test('builds and runs a test suite', async () => {
   await page.getByRole('menuitem', { name: 'New collection' }).click()
   await editor.getByRole('button', { name: 'Run suite' }).click()
   await editor.getByRole('tab', { name: 'Results' }).click()
-  await expect(editor.getByRole('status', { name: 'Run summary' })).toContainText('1 passed, 0 failed')
+  await expect(editor.getByRole('status', { name: 'Run summary' })).toContainText('2 passed, 0 failed')
   await expect(editor.getByRole('status', { name: 'Run summary' })).toContainText('Tests 1/1 passed')
   await editor.getByRole('tab', { name: 'History 1' }).click()
   await expect(editor.getByRole('list', { name: 'Past runs' }).getByRole('listitem')).toHaveCount(1)
@@ -177,7 +202,7 @@ test('brings everything back after a restart', async () => {
   await expect(page.getByRole('treeitem', { name: /MQTT request/ })).toBeVisible()
 
   const tree = JSON.parse(readFileSync(join(defaultWorkspace, 'collections.json'), 'utf8')) as { nodes: unknown[] }
-  expect(tree.nodes).toHaveLength(4)
+  expect(tree.nodes).toHaveLength(5)
 })
 
 test('creates a second workspace in a chosen folder and switches between them', async () => {

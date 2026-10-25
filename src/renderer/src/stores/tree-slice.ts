@@ -6,6 +6,7 @@ import {
   insertRequest,
   moveInTree,
   patchConfig,
+  placeInTree,
   removeFromTree,
   renameInTree,
   type Insertion
@@ -37,6 +38,7 @@ export const createTreeSlice: Creator = (set, get) => {
     renameNode: (id, name) => set(renameInTree(get(), id, name)),
     removeNode: (id) => set(removeFromTree(get(), id)),
     moveNode: (id, parentId) => set(moveInTree(get(), id, parentId)),
+    placeNode: (id, target) => set(placeInTree(get(), id, target)),
     updateConfig: (id, patch) => set(patchConfig(get(), id, patch))
   }
 }

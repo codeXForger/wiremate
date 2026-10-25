@@ -48,9 +48,9 @@ describe('suite items', () => {
 
   it('lists API folders and requests with their depth', () => {
     expect(addableNodes(nodes).map(({ node, depth }) => [node.name, depth])).toEqual([
-      ['Empty', 0],
       ['Users', 0],
-      ['Get user', 1]
+      ['Get user', 1],
+      ['Empty', 0]
     ])
   })
 })

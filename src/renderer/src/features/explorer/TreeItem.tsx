@@ -7,12 +7,18 @@ import { ItemName } from '@/components/ItemName'
 import { RenameInput } from '@/components/RenameInput'
 import { TreeItemMenu } from './TreeItemMenu'
 import { TreeList } from './TreeList'
-import { dragSourceProps, dropTargetProps, useIsDropTarget } from './tree-drag'
+import type { DropPosition } from './drag-store'
+import { dragSourceProps, rowDropProps, useDropIndicator } from './tree-drag'
 import { useTreeItem, type TreeItemState } from './use-tree-item'
 
 const INDENT_PX = 12
 const ROW_CLASS = 'flex h-7 cursor-default items-center gap-1.5 pr-2 hover:bg-surface'
-const DROP_CLASS = 'bg-primary/15 outline outline-1 -outline-offset-1 outline-primary'
+/** Inside a folder: highlight the row. Before or after a row: a line on that edge. */
+const DROP_CLASS: Record<DropPosition, string> = {
+  inside: 'bg-primary/15 outline outline-1 -outline-offset-1 outline-primary',
+  before: 'shadow-[inset_0_2px_0_var(--primary)]',
+  after: 'shadow-[inset_0_-2px_0_var(--primary)]'
+}
 
 interface TreeItemProps {
   node: TreeNode
@@ -33,18 +39,17 @@ export function TreeItem({ node, depth }: TreeItemProps) {
 
 type TreeRowProps = TreeItemProps & ComponentProps<'div'> & { item: TreeItemState }
 
-/** Folders receive drops themselves; dropping on a request drops into that request's folder. */
+/** Every row takes drops before or after it; folders also take drops inside, and open to show them. */
 function useRowDrag(node: TreeNode, item: TreeItemState) {
-  const isFolder = node.kind === 'folder'
-  const isOver = useIsDropTarget(node.id)
-  const dropProps = isFolder ? dropTargetProps(node.id, item.expand) : dropTargetProps(node.parentId)
-  return { props: { ...dragSourceProps(node, !item.renaming), ...dropProps }, isOver: isFolder && isOver }
+  const indicator = useDropIndicator(node.id)
+  const props = { ...dragSourceProps(node, !item.renaming), ...rowDropProps(node, item.expand) }
+  return { props, indicator }
 }
 
 function TreeRow({ node, depth, item, ...triggerProps }: TreeRowProps) {
   const drag = useRowDrag(node, item)
   const style = { paddingLeft: 8 + depth * INDENT_PX }
-  const className = cn(ROW_CLASS, item.active && 'bg-surface', drag.isOver && DROP_CLASS)
+  const className = cn(ROW_CLASS, item.active && 'bg-surface', drag.indicator && DROP_CLASS[drag.indicator])
   return (
     <div {...triggerProps} {...item.rowProps} {...drag.props} style={style} className={className}>
       <NodeIcon node={node} expanded={item.expanded} />

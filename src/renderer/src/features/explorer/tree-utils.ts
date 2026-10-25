@@ -1,18 +1,14 @@
 import { categoryOf, type CategoryId } from '@shared/protocols/categories'
 import type { TreeNode } from '@shared/types/workspace'
 
-function compareNodes(a: TreeNode, b: TreeNode): number {
-  if (a.kind !== b.kind) return a.kind === 'folder' ? -1 : 1
-  return a.name.localeCompare(b.name)
-}
-
 export function nodeCategory(node: TreeNode): CategoryId {
   return node.protocol ? categoryOf(node.protocol) : (node.category ?? 'api')
 }
 
+/** A folder's children in the order the user arranged them, which is their order in `nodes`. */
 export function childrenOf(nodes: TreeNode[], parentId: string | null, category?: CategoryId): TreeNode[] {
   const matches = (node: TreeNode): boolean => !category || nodeCategory(node) === category
-  return nodes.filter((node) => node.parentId === parentId && matches(node)).sort(compareNodes)
+  return nodes.filter((node) => node.parentId === parentId && matches(node))
 }
 
 export function collectSubtreeIds(nodes: TreeNode[], rootId: string): Set<string> {
@@ -45,4 +41,24 @@ export function canMoveNode(nodes: TreeNode[], id: string, targetId: string | nu
   const target = nodes.find((candidate) => candidate.id === targetId)
   if (target?.kind !== 'folder' || nodeCategory(target) !== nodeCategory(node)) return false
   return !collectSubtreeIds(nodes, id).has(targetId)
+}
+
+export type PlacePosition = 'before' | 'after'
+
+/** A node can go next to any other node of the same section, except somewhere inside its own subtree. */
+export function canPlaceNode(nodes: TreeNode[], id: string, targetId: string): boolean {
+  const node = nodes.find((candidate) => candidate.id === id)
+  const target = nodes.find((candidate) => candidate.id === targetId)
+  if (!node || !target || id === targetId || nodeCategory(target) !== nodeCategory(node)) return false
+  return !collectSubtreeIds(nodes, id).has(targetId)
+}
+
+/** Moves a node right before or after another one, into that node's folder. */
+export function placeNode(nodes: TreeNode[], id: string, target: { id: string; position: PlacePosition }): TreeNode[] {
+  const moving = nodes.find((node) => node.id === id)
+  const anchor = nodes.find((node) => node.id === target.id)
+  if (!moving || !anchor) return nodes
+  const rest = nodes.filter((node) => node.id !== id)
+  const index = rest.indexOf(anchor) + (target.position === 'after' ? 1 : 0)
+  return [...rest.slice(0, index), { ...moving, parentId: anchor.parentId }, ...rest.slice(index)]
 }

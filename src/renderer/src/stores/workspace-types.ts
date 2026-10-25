@@ -1,4 +1,5 @@
 import type { CategoryId } from '@shared/protocols/categories'
+import type { PlacePosition } from '@/features/explorer/tree-utils'
 import type { AnyRequest, ProtocolConfigMap, ProtocolId } from '@shared/types/protocol'
 import type { CreateWorkspaceInput, Environment, Theme, TreeNode, Workspace } from '@shared/types/workspace'
 
@@ -26,7 +27,10 @@ export interface TreeSlice {
   duplicateRequest: (id: string) => string | null
   renameNode: (id: string, name: string) => void
   removeNode: (id: string) => void
+  /** Moves a node into a folder (null: the section root) as its last child. */
   moveNode: (id: string, parentId: string | null) => void
+  /** Moves a node right before or after another node, into that node's folder. */
+  placeNode: (id: string, target: { id: string; position: PlacePosition }) => void
   updateConfig: <P extends ProtocolId>(id: string, patch: Partial<ProtocolConfigMap[P]>) => void
 }
 

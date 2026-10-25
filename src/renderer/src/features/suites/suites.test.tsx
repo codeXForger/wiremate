@@ -68,9 +68,9 @@ describe('test suites', () => {
     const results = within(editor).getByRole('list', { name: 'Run results' })
     expect(Array.from(results.children).map((row) => row.getAttribute('aria-label'))).toEqual([
       'passed: List users',
-      'failed: Broken',
       'passed: List users',
-      'passed: Login'
+      'passed: Login',
+      'failed: Broken'
     ])
     expect(within(results).getByRole('listitem', { name: 'failed: Broken' })).toHaveTextContent('ECONNREFUSED')
     expect(within(results).getByRole('listitem', { name: 'passed: Login' })).toHaveTextContent('1/1 tests')
