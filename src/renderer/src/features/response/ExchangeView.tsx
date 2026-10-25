@@ -31,7 +31,7 @@ function ResponseBody({ response }: { response: ExchangeResponse }) {
   if (response.cancelled) return <Hint role="status">Request cancelled. Send it again when you are ready.</Hint>
   if (!response.error) return <CodeEditor ariaLabel="Response body" readOnly value={response.body} />
   return (
-    <div role="alert" className="p-3 text-xs">
+    <div role="alert" className="p-3 text-xs select-text">
       <p className="font-medium text-destructive">Could not get a response</p>
       <p className="mt-1 font-mono break-all text-muted-foreground">{response.error}</p>
     </div>
@@ -66,7 +66,7 @@ function ResponseTime({ response: { durationMs, firstByteMs } }: { response: Exc
 
 function HeaderList({ response }: { response: ExchangeResponse }) {
   return (
-    <dl className="grid h-full grid-cols-[minmax(120px,auto)_1fr] gap-x-4 gap-y-1 overflow-auto p-3 font-mono text-xs">
+    <dl className="grid h-full grid-cols-[minmax(120px,auto)_1fr] gap-x-4 gap-y-1 overflow-auto p-3 font-mono text-xs select-text">
       {response.headers.map((header) => [
         <dt key={`${header.id}-key`} className="text-muted-foreground">
           {header.key}

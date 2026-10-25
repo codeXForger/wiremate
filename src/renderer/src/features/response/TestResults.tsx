@@ -20,7 +20,7 @@ export function TestResults({ tests }: { tests: TestResult[] }) {
   }
   const { passed, failed } = tallyTests(tests)
   return (
-    <div className="h-full overflow-auto p-3 text-xs">
+    <div className="h-full overflow-auto p-3 text-xs select-text">
       <p className="mb-2 text-muted-foreground">{`${passed} passed, ${failed} failed`}</p>
       <TestList tests={tests} />
     </div>

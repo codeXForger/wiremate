@@ -1,6 +1,7 @@
-import type { ConsoleEntry, ConsoleSource, LogLevel } from '@shared/types/scripting'
+import type { ConsoleEntry, LogLevel } from '@shared/types/scripting'
+import { CopyButton } from '@/components/CopyButton'
 import { cn } from '@/lib/utils'
-import { formatClock } from './console-filter'
+import { entryText, formatClock, SOURCE_LABEL } from './console-filter'
 
 const LEVEL_TONE: Record<LogLevel, string> = {
   log: 'text-foreground',
@@ -9,18 +10,17 @@ const LEVEL_TONE: Record<LogLevel, string> = {
   error: 'text-destructive'
 }
 
-const SOURCE_LABEL: Record<ConsoleSource, string> = {
-  pre: 'pre-request',
-  post: 'post-response',
-  request: 'request',
-  response: 'response',
-  system: 'wiremate'
-}
+const ROW_CLASS = 'group flex items-start gap-2 border-b border-border/50 py-1 pr-1 pl-3'
 
 export function ConsoleEntryRow({ entry }: { entry: ConsoleEntry }) {
   return (
-    <li aria-label={`${SOURCE_LABEL[entry.source]}: ${entry.message}`} className="border-b border-border/50 px-3 py-1">
-      {entry.detail ? <ExpandableEntry entry={entry} detail={entry.detail} /> : <EntryLine entry={entry} />}
+    <li aria-label={`${SOURCE_LABEL[entry.source]}: ${entry.message}`} className={ROW_CLASS}>
+      <div className="min-w-0 flex-1">
+        {entry.detail ? <ExpandableEntry entry={entry} detail={entry.detail} /> : <EntryLine entry={entry} />}
+      </div>
+      <span className="opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+        <CopyButton label="Copy entry" text={() => entryText(entry)} />
+      </span>
     </li>
   )
 }

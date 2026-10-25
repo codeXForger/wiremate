@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Ban, X } from 'lucide-react'
 import type { ConsoleEntry } from '@shared/types/scripting'
 import { Column } from '@/components/Column'
+import { CopyButton } from '@/components/CopyButton'
 import { Hint } from '@/components/Hint'
 import { IconButton } from '@/components/IconButton'
 import { useConsoleStore } from '@/stores/console-store'
 import { OptionSelect } from '../request/components/OptionSelect'
-import { filterEntries, LEVEL_FILTERS, type LevelFilter } from './console-filter'
+import { entriesText, filterEntries, LEVEL_FILTERS, type LevelFilter } from './console-filter'
 import { ConsoleEntryRow } from './ConsoleEntryRow'
 
 export function ConsolePanel() {
@@ -30,6 +31,10 @@ function ConsoleToolbar({ filter, onFilter }: FilterProps) {
     <div className="flex h-8 shrink-0 items-center gap-2 border-b pr-1.5 pl-3 font-sans">
       <h2 className="text-xs font-medium text-muted-foreground">Console</h2>
       <LevelSelect filter={filter} onFilter={onFilter} />
+      <CopyButton
+        label="Copy all"
+        text={() => entriesText(filterEntries(useConsoleStore.getState().entries, filter))}
+      />
       <IconButton label="Clear console" icon={Ban} onClick={clear} />
       <IconButton label="Close console" icon={X} onClick={toggle} />
     </div>
@@ -64,7 +69,7 @@ function useScrollToEnd(count: number): RefObject<HTMLDivElement | null> {
 function EntryList({ entries }: { entries: ConsoleEntry[] }) {
   const end = useScrollToEnd(entries.length)
   return (
-    <div className="min-h-0 flex-1 overflow-auto">
+    <div className="min-h-0 flex-1 overflow-auto select-text">
       <ul aria-label="Console entries">
         {entries.map((entry) => (
           <ConsoleEntryRow key={entry.id} entry={entry} />

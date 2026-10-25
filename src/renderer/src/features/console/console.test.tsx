@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { useConsoleStore, CONSOLE_LIMIT } from '@/stores/console-store'
 import { openRequest, renderApp } from '../../../test/render-app'
 import { installBridge } from '../../../test/wiremate-stub'
-import { formatClock } from './console-filter'
+import { entryText, formatClock } from './console-filter'
 
 describe('console', () => {
   it('shows what was sent, what came back and script logs', async () => {
@@ -51,7 +51,39 @@ describe('console', () => {
     expect(useConsoleStore.getState().entries[0]?.id).toBe('e5')
   })
 
+  it('copies an entry, or everything shown, as text', async () => {
+    // user-event puts its own clipboard in place, so read back what was written.
+    installBridge()
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    await user.click(screen.getByRole('button', { name: 'Console' }))
+    const panel = screen.getByRole('region', { name: 'Console' })
+    expect(within(panel).getByRole('list', { name: 'Console entries' }).parentElement).toHaveClass('select-text')
+
+    const request = await within(panel).findByRole('listitem', { name: /^request: GET/ })
+    await user.click(within(request).getByRole('button', { name: 'Copy entry' }))
+    expect(await navigator.clipboard.readText()).toMatch(
+      /^\d\d:\d\d:\d\d\.\d{3} request List users GET https:\/\/httpbin\.org\/get\nAccept: application\/json$/
+    )
+    expect(await within(request).findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+
+    await user.click(within(panel).getByRole('button', { name: 'Copy all' }))
+    const all = await navigator.clipboard.readText()
+    expect(all).toMatch(/request List users GET https:\/\/httpbin\.org\/get[\s\S]*response List users 200 OK/)
+    expect(all).toContain('"method":"GET"')
+  })
+
   it('formats timestamps with milliseconds', () => {
     expect(formatClock(new Date(2026, 0, 2, 3, 4, 5, 6).getTime())).toBe('03:04:05.006')
+  })
+})
+
+describe('entryText', () => {
+  it('leaves out what an entry does not have', () => {
+    const at = new Date(2026, 0, 1, 9, 30, 0, 5).getTime()
+    expect(entryText({ id: 'a', at, source: 'system', level: 'warn', message: 'careful' })).toBe(
+      '09:30:00.005 wiremate careful'
+    )
   })
 })
