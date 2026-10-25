@@ -15,7 +15,11 @@ function exchangeTabs(response: ExchangeResponse): PanelTab[] {
   if (response.simulated) return tabs
   return [
     ...tabs,
-    { value: 'tests', label: <TestsLabel tests={response.tests} />, content: <TestResults tests={response.tests} /> }
+    {
+      value: 'tests',
+      label: <TestsLabel tests={response.tests} scriptErrors={response.scriptErrors} />,
+      content: <TestResults tests={response.tests} scriptErrors={response.scriptErrors} />
+    }
   ]
 }
 

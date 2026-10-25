@@ -65,6 +65,24 @@ function readableBody(body: string): unknown {
   }
 }
 
+function bodyPreview(body: string): string {
+  const trimmed = body.trim()
+  if (trimmed === '') return 'the body is empty'
+  return `body starts with "${trimmed.slice(0, 40)}${trimmed.length > 40 ? '…' : ''}"`
+}
+
+/** JSON.parse, with an error that says which response it was and what to do instead. */
+function parseJsonBody(response: WireResponse): unknown {
+  try {
+    return JSON.parse(response.body)
+  } catch {
+    const what = `${response.status} ${response.statusText}, ${bodyPreview(response.body)}`
+    throw new Error(
+      `wm.response.json() could not read the body as JSON (${what}). Check wm.response.status first, or use wm.response.text().`
+    )
+  }
+}
+
 function responseApi(response: WireResponse): Globals {
   const { status, statusText, timings, sizeBytes: size } = response
   const summary = { status, statusText, time: timings.totalMs, size }
@@ -72,7 +90,7 @@ function responseApi(response: WireResponse): Globals {
     ...summary,
     headers: headerReader(() => response.headers),
     text: () => response.body,
-    json: (): unknown => JSON.parse(response.body),
+    json: (): unknown => parseJsonBody(response),
     toJSON: () => ({ ...summary, headers: headerObject(response.headers), body: readableBody(response.body) })
   }
 }

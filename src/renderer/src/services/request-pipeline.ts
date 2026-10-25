@@ -98,7 +98,9 @@ export class RequestPipeline {
     request: WireRequest,
     result: Pick<PipelineResult, 'response' | 'variables'>
   ): PipelineResult {
-    return { request, ...result, logs: trace.logs, scriptErrors: trace.scriptErrors }
+    const { scriptErrors } = trace
+    const response = scriptErrors.length > 0 ? { ...result.response, scriptErrors } : result.response
+    return { request, ...result, response, logs: trace.logs, scriptErrors }
   }
 
   private async script(trace: RunTrace, run: ScriptRun): Promise<Stage> {

@@ -4,25 +4,48 @@ import { tallyTests } from '@shared/utils/test-results'
 import { Hint } from '@/components/Hint'
 import { cn } from '@/lib/utils'
 
-export function TestsLabel({ tests }: { tests: TestResult[] }) {
+interface TestsProps {
+  tests: TestResult[]
+  /** Scripts that threw; shown first, since tests after the error did not run. */
+  scriptErrors?: string[]
+}
+
+export function TestsLabel({ tests, scriptErrors = [] }: TestsProps) {
   const { passed, failed, total } = tallyTests(tests)
-  if (total === 0) return 'Tests'
+  const error = scriptErrors.length > 0 && <span className="text-destructive"> · script error</span>
+  if (total === 0) return error ? <span>Tests{error}</span> : 'Tests'
   return (
     <span>
       Tests <span className={cn(failed > 0 ? 'text-destructive' : 'text-success')}>{`${passed}/${total}`}</span>
+      {error}
     </span>
   )
 }
 
-export function TestResults({ tests }: { tests: TestResult[] }) {
-  if (tests.length === 0) {
+export function TestResults({ tests, scriptErrors = [] }: TestsProps) {
+  if (tests.length === 0 && scriptErrors.length === 0) {
     return <Hint>No tests ran. Add wm.test(…) to the request's post-response script.</Hint>
   }
   const { passed, failed } = tallyTests(tests)
   return (
     <div className="h-full overflow-auto p-3 text-xs select-text">
-      <p className="mb-2 text-muted-foreground">{`${passed} passed, ${failed} failed`}</p>
+      <ScriptErrors errors={scriptErrors} />
+      {tests.length > 0 && <p className="mb-2 text-muted-foreground">{`${passed} passed, ${failed} failed`}</p>}
       <TestList tests={tests} />
+    </div>
+  )
+}
+
+function ScriptErrors({ errors }: { errors: string[] }) {
+  if (errors.length === 0) return null
+  return (
+    <div role="alert" className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2">
+      {errors.map((error) => (
+        <p key={error} className="font-mono break-all text-destructive">
+          {error}
+        </p>
+      ))}
+      <p className="mt-1 text-muted-foreground">Tests written after the failing line did not run.</p>
     </div>
   )
 }

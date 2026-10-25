@@ -15,6 +15,8 @@ export interface ExchangeResponse {
   error?: string
   cancelled?: boolean
   tests: TestResult[]
+  /** Scripts that threw, e.g. "Post-response script failed: …"; tests after the error did not run. */
+  scriptErrors?: string[]
   simulated: boolean
 }
 

@@ -195,6 +195,22 @@ describe('executeScript', () => {
     expect(JSON.parse(text.logs[0]!.message)).toMatchObject({ body: 'plain' })
   })
 
+  it('explains a body that is not JSON', async () => {
+    const page = { ...response, status: 404, statusText: 'Not Found', body: '<html><body>Not Found</body></html>' }
+    const html = await executeScript(run('wm.response.json()', { response: page }), evaluate)
+    expect(html.error).toBe(
+      'wm.response.json() could not read the body as JSON (404 Not Found, body starts with "<html><body>Not Found</body></html>"). ' +
+        'Check wm.response.status first, or use wm.response.text().'
+    )
+    const empty = await executeScript(run('wm.response.json()', { response: { ...page, body: '  ' } }), evaluate)
+    expect(empty.error).toContain('(404 Not Found, the body is empty)')
+    const long = await executeScript(
+      run('wm.response.json()', { response: { ...page, body: 'x'.repeat(60) } }),
+      evaluate
+    )
+    expect(long.error).toContain(`"${'x'.repeat(40)}…"`)
+  })
+
   it('clears the body and rejects unknown methods', async () => {
     const cleared = await executeScript(run('wm.request.body = null'), evaluate)
     expect(cleared.request.body).toBeNull()

@@ -1,6 +1,6 @@
 import { act, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { HttpResult } from '@shared/types/http'
+import type { HttpResult, WireRequest, WireResponse } from '@shared/types/http'
 import { useConsoleStore } from '@/stores/console-store'
 import { useSessionVariables } from '@/stores/session-variables'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -106,6 +106,32 @@ describe('request scripts', () => {
     expect(await screen.findByText('200 OK')).toBeInTheDocument()
     expect(screen.queryByRole('status', { name: 'Sending request' })).not.toBeInTheDocument()
     vi.useRealTimers()
+  })
+
+  it('runs the post-response script on a 404 and shows a script error in the Tests tab', async () => {
+    const notFound = (request: WireRequest): HttpResult => ({
+      ...(echoResponse(request) as WireResponse),
+      status: 404,
+      statusText: 'Not Found',
+      body: '<html>Not Found</html>'
+    })
+    installBridge(notFound)
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    await writeScript(
+      user,
+      'Post-response',
+      `wm.test('is 404', () => wm.expect(wm.response.status).toBe(404))
+       const data = wm.response.json()
+       wm.test('never runs', () => {})`
+    )
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    await user.click(await screen.findByRole('tab', { name: /^Tests 1\/1\s*·\s*script error$/ }))
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Post-response script failed: wm.response.json() could not read the body as JSON (404 Not Found'
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('Tests written after the failing line did not run.')
+    expect(screen.getByRole('listitem', { name: 'Passed: is 404' })).toBeInTheDocument()
   })
 
   it('shows network errors in place of the body', async () => {
