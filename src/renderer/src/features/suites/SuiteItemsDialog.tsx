@@ -9,27 +9,27 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } fr
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { isCovered, pickerRows, selectionInOrder, toggleSelection } from './item-picker'
+import { isCovered, pickerChanges, pickerRows, toggleSelection, type PickerChanges } from './item-picker'
 import { KindIcon } from './KindIcon'
 import type { AddableNode } from './suite-items'
 
-interface AddItemsDialogProps {
-  /** Node ids already in the suite, marked so they are not added twice by accident. */
+interface SuiteItemsDialogProps {
+  /** Node ids in the suite when the dialog opens; they start ticked. */
   inSuite: Set<string>
-  onAdd: (nodeIds: string[]) => void
+  onSave: (changes: PickerChanges) => void
   onClose: () => void
 }
 
-/** Picks folders and requests of the API section to add to a suite: search, tick, add. */
 const CONTENT_CLASS = 'flex max-h-[80vh] w-[min(560px,calc(100vw-32px))] flex-col'
 
-const DESCRIPTION = 'Tick requests or whole folders. A folder runs every request inside it.'
+const DESCRIPTION = 'Tick what the suite runs, untick what it should not. A ticked folder runs every request inside it.'
 
-export function AddItemsDialog(props: AddItemsDialogProps) {
+/** Chooses which folders and requests of the API section a suite runs: search, tick or untick, save. */
+export function SuiteItemsDialog(props: SuiteItemsDialogProps) {
   return (
     <Dialog open onOpenChange={(open) => !open && props.onClose()}>
       <DialogContent className={CONTENT_CLASS}>
-        <DialogTitle>Add to suite</DialogTitle>
+        <DialogTitle>Suite requests</DialogTitle>
         <DialogDescription>{DESCRIPTION}</DialogDescription>
         <PickerBody {...props} />
       </DialogContent>
@@ -37,29 +37,29 @@ export function AddItemsDialog(props: AddItemsDialogProps) {
   )
 }
 
-function PickerBody({ inSuite, onAdd, onClose }: AddItemsDialogProps) {
-  const picker = usePicker()
-  const add = (): void => {
-    onAdd(picker.ordered)
+function PickerBody({ inSuite, onSave, onClose }: SuiteItemsDialogProps) {
+  const picker = usePicker(inSuite)
+  const save = (): void => {
+    onSave(picker.changes)
     onClose()
   }
   return (
     <>
       <SearchBox value={picker.query} onChange={picker.setQuery} />
-      <PickerList picker={picker} inSuite={inSuite} />
-      <PickerFooter count={picker.ordered.length} onAdd={add} />
+      <PickerList picker={picker} />
+      <PickerFooter changes={picker.changes} onSave={save} />
     </>
   )
 }
 
-function usePicker() {
+function usePicker(initial: Set<string>) {
   const nodes = useWorkspaceStore((state) => state.nodes)
   const [query, setQuery] = useState('')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(initial))
   const toggle = (id: string): void => setSelected(toggleSelection(nodes, selected, id))
   const covered = (id: string): boolean => isCovered(nodes, selected, id)
-  const rows = pickerRows(nodes, query)
-  return { query, setQuery, rows, selected, toggle, covered, ordered: selectionInOrder(nodes, selected) }
+  const changes = pickerChanges(nodes, initial, selected)
+  return { query, setQuery, rows: pickerRows(nodes, query), selected, toggle, covered, changes }
 }
 
 type Picker = ReturnType<typeof usePicker>
@@ -80,14 +80,14 @@ function SearchBox({ value, onChange }: { value: string; onChange: (value: strin
   )
 }
 
-function PickerList({ picker, inSuite }: { picker: Picker; inSuite: Set<string> }) {
+function PickerList({ picker }: { picker: Picker }) {
   if (picker.rows.length === 0) {
     return <Hint>{picker.query ? 'Nothing matches the search.' : 'The API section has no requests yet.'}</Hint>
   }
   return (
     <ul aria-label="Requests and folders" className="mt-2 min-h-40 flex-1 overflow-auto rounded-md border p-1">
       {picker.rows.map((row) => (
-        <PickerRow key={row.node.id} row={row} picker={picker} inSuite={inSuite.has(row.node.id)} />
+        <PickerRow key={row.node.id} row={row} picker={picker} />
       ))}
     </ul>
   )
@@ -95,7 +95,7 @@ function PickerList({ picker, inSuite }: { picker: Picker; inSuite: Set<string> 
 
 const ROW_CLASS = 'flex h-8 cursor-pointer items-center gap-2 rounded pr-2 text-[13px] hover:bg-surface'
 
-function PickerRow({ row, picker, inSuite }: { row: AddableNode; picker: Picker; inSuite: boolean }) {
+function PickerRow({ row, picker }: { row: AddableNode; picker: Picker }) {
   const { node, depth } = row
   const covered = picker.covered(node.id)
   const className = cn(ROW_CLASS, covered && 'cursor-default opacity-60')
@@ -105,7 +105,6 @@ function PickerRow({ row, picker, inSuite }: { row: AddableNode; picker: Picker;
         <PickerCheckbox node={node} picker={picker} covered={covered} />
         <NodeIcon node={node} />
         <ItemName name={node.name} />
-        {inSuite && <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">in suite</span>}
       </label>
     </li>
   )
@@ -132,15 +131,21 @@ function NodeIcon({ node }: { node: TreeNode }) {
   return <RequestBadge requestId={node.id} protocol={node.protocol} className="w-auto" />
 }
 
-function PickerFooter({ count, onAdd }: { count: number; onAdd: () => void }) {
+function describeChanges({ added, removed }: PickerChanges): string {
+  const parts = [added.length > 0 && `${added.length} to add`, removed.length > 0 && `${removed.length} to remove`]
+  return parts.filter(Boolean).join(' · ') || 'No changes'
+}
+
+function PickerFooter({ changes, onSave }: { changes: PickerChanges; onSave: () => void }) {
+  const changed = changes.added.length + changes.removed.length > 0
   return (
     <div className="mt-4 flex items-center gap-2">
-      <span className="text-xs text-muted-foreground">{`${count} selected`}</span>
+      <span className="text-xs text-muted-foreground">{describeChanges(changes)}</span>
       <DialogClose asChild>
         <Button className="ml-auto">Cancel</Button>
       </DialogClose>
-      <Button variant="primary" disabled={count === 0} onClick={onAdd}>
-        {count > 0 ? `Add ${count}` : 'Add'}
+      <Button variant="primary" disabled={!changed} onClick={onSave}>
+        Save
       </Button>
     </div>
   )

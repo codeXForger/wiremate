@@ -9,20 +9,25 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { answerDeleteDialog, goTo, renderApp, type User } from '../../../test/render-app'
 import { echoResponse, installBridge } from '../../../test/wiremate-stub'
 
-function addHttpRequest(name: string, config: Partial<HttpConfig>): string {
+/** Adds an HTTP request to the "Public APIs" collection, or to the section root with `parentId` null. */
+function addHttpRequest(name: string, config: Partial<HttpConfig>, parentId: string | null = 'f_api'): string {
   const store = useWorkspaceStore.getState()
-  const id = store.addRequest('f_api', 'http')
+  const id = store.addRequest(parentId, 'http')
   store.renameNode(id, name)
   store.updateConfig<'http'>(id, config)
   return id
 }
 
+async function openPicker(user: User) {
+  await user.click(screen.getByRole('button', { name: 'Choose requests' }))
+  return screen.findByRole('dialog', { name: 'Suite requests' })
+}
+
 /** Ticks the named requests or folders in the picker and adds them. */
 async function addToSuite(user: User, ...names: string[]) {
-  await user.click(screen.getByRole('button', { name: 'Add requests' }))
-  const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+  const dialog = await openPicker(user)
   for (const name of names) await user.click(within(dialog).getByRole('checkbox', { name }))
-  await user.click(within(dialog).getByRole('button', { name: `Add ${names.length}` }))
+  await user.click(within(dialog).getByRole('button', { name: 'Save' }))
 }
 
 /** Waits for the run to finish, then gives its dashboard: the header and the stat tiles by label. */
@@ -53,21 +58,22 @@ describe('test suites', () => {
       }
     })
     addHttpRequest('Broken', { url: 'https://api.test/broken' })
+    addHttpRequest('Health', { url: 'https://api.test/health' }, null)
     const editor = await newSuite(user)
     expect(screen.getByRole('tab', { name: /Suite 1/ })).toHaveAttribute('aria-selected', 'true')
     expect(within(editor).getByRole('button', { name: 'Run suite' })).toBeDisabled()
 
     await addToSuite(user, 'Public APIs')
-    await addToSuite(user, 'List users')
+    await addToSuite(user, 'Health')
     const list = within(editor).getByRole('list', { name: 'Suite requests' })
     expect(
       within(list)
         .getAllByRole('listitem')
         .map((row) => row.getAttribute('aria-label'))
-    ).toEqual(['1. Public APIs', '2. List users'])
+    ).toEqual(['1. Public APIs', '2. Health'])
     expect(within(list).getByText('3 HTTP requests')).toBeInTheDocument()
-    await user.click(within(list).getByRole('button', { name: 'Move List users up' }))
-    expect(within(list).getAllByRole('listitem')[0]).toHaveAccessibleName('1. List users')
+    await user.click(within(list).getByRole('button', { name: 'Move Health up' }))
+    expect(within(list).getAllByRole('listitem')[0]).toHaveAccessibleName('1. Health')
 
     await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
     const { header, tile } = await dashboard(editor)
@@ -90,7 +96,7 @@ describe('test suites', () => {
     expect(Array.from(results.children).map((row) => row.getAttribute('aria-label'))).toEqual(['failed: Broken'])
     await user.click(within(editor).getByRole('button', { name: 'All 4' }))
     expect(Array.from(results.children).map((row) => row.getAttribute('aria-label'))).toEqual([
-      'passed: List users',
+      'passed: Health',
       'passed: List users',
       'passed: Login',
       'failed: Broken'
@@ -119,15 +125,15 @@ describe('test suites', () => {
     installBridge(() => ({ kind: 'error', error: 'down', durationMs: 1 }))
     const { user } = await renderApp()
     addHttpRequest('Second', { url: 'https://api.test/2' })
+    addHttpRequest('Third', { url: 'https://api.test/3' })
     const editor = await newSuite(user)
     await addToSuite(user, 'List users')
-    await addToSuite(user, 'Second')
-    await addToSuite(user, 'Second')
+    await addToSuite(user, 'Second', 'Third')
     await user.click(within(editor).getByRole('switch', { name: 'Stop on first failure' }))
     fireEvent.change(within(editor).getByLabelText('Delay (ms)'), { target: { value: '-5' } })
     const suite = () => useSuiteStore.getState().suites[0]!
     expect(suite().options).toEqual({ stopOnFailure: true, delayMs: 0 })
-    await user.click(within(editor).getAllByRole('button', { name: 'Remove Second' })[0]!)
+    await user.click(within(editor).getByRole('button', { name: 'Remove Third' }))
     await user.click(within(editor).getByRole('button', { name: 'Move List users down' }))
     expect(suite().items).toHaveLength(2)
 
@@ -175,13 +181,14 @@ describe('test suites', () => {
   it('picks items in a searchable tree where a folder covers what is inside it', async () => {
     const { user } = await renderApp()
     addHttpRequest('Create user', { url: 'https://api.test/users' })
-    const editor = await newSuite(user)
+    await newSuite(user)
     await addToSuite(user, 'List users')
-    await user.click(within(editor).getByRole('button', { name: 'Add requests' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+    const dialog = await openPicker(user)
     const list = within(dialog).getByRole('list', { name: 'Requests and folders' })
-    expect(within(dialog).getByRole('button', { name: 'Add' })).toBeDisabled()
-    expect(within(dialog).getByText('in suite')).toBeInTheDocument()
+    expect(within(dialog).getByRole('checkbox', { name: 'List users' })).toBeChecked()
+    expect(within(dialog).getByRole('checkbox', { name: 'Create user' })).not.toBeChecked()
+    expect(within(dialog).getByText('No changes')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled()
 
     await user.type(within(dialog).getByRole('textbox', { name: 'Search requests and folders' }), 'create')
     expect(
@@ -198,16 +205,34 @@ describe('test suites', () => {
     await user.click(within(dialog).getByRole('checkbox', { name: 'Public APIs' }))
     expect(within(dialog).getByRole('checkbox', { name: 'Create user' })).toBeChecked()
     expect(within(dialog).getByRole('checkbox', { name: 'Create user' })).toBeDisabled()
-    expect(within(dialog).getByText('1 selected')).toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: 'Add 1' }))
-    expect(useSuiteStore.getState().suites[0]!.items.map((item) => item.nodeId)).toEqual(['r_f_api_0', 'f_api'])
+    expect(within(dialog).getByRole('checkbox', { name: 'List users' })).toBeDisabled()
+    expect(within(dialog).getByText('1 to add · 1 to remove')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+    expect(useSuiteStore.getState().suites[0]!.items.map((item) => item.nodeId)).toEqual(['f_api'])
+  })
+
+  it('removes what is unticked and keeps the order of what stays', async () => {
+    const { user } = await renderApp()
+    addHttpRequest('Create user', { url: 'https://api.test/users' })
+    addHttpRequest('Delete user', { url: 'https://api.test/users/1' })
+    await newSuite(user)
+    await addToSuite(user, 'Delete user', 'List users')
+    const nodeIds = () => useSuiteStore.getState().suites[0]!.items.map((item) => item.nodeId)
+    const [list, del] = [nodeIds()[0], nodeIds()[1]]
+    const dialog = await openPicker(user)
+    await user.click(within(dialog).getByRole('checkbox', { name: 'List users' }))
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Create user' }))
+    expect(within(dialog).getByText('1 to add · 1 to remove')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }))
+    expect(nodeIds()[0]).toBe(del)
+    expect(nodeIds()).not.toContain(list)
+    expect(nodeIds()).toHaveLength(2)
   })
 
   it('cancels the picker without adding anything', async () => {
     const { user } = await renderApp()
-    const editor = await newSuite(user)
-    await user.click(within(editor).getByRole('button', { name: 'Add requests' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+    await newSuite(user)
+    const dialog = await openPicker(user)
     await user.click(within(dialog).getByRole('checkbox', { name: 'List users' }))
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

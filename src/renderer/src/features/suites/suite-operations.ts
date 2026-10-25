@@ -5,6 +5,15 @@ export function appendItems(items: SuiteItem[], nodeIds: string[]): SuiteItem[] 
   return [...items, ...nodeIds.map((nodeId) => ({ id: createId('item'), nodeId }))]
 }
 
+/** Drops the removed nodes (every item that points at them) and appends the added ones; the rest keep their place. */
+export function applyChanges(items: SuiteItem[], changes: { added: string[]; removed: string[] }): SuiteItem[] {
+  const removed = new Set(changes.removed)
+  return appendItems(
+    items.filter((item) => !removed.has(item.nodeId)),
+    changes.added
+  )
+}
+
 export function removeItem(items: SuiteItem[], itemId: string): SuiteItem[] {
   return items.filter((item) => item.id !== itemId)
 }

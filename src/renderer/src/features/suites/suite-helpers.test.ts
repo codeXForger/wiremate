@@ -5,9 +5,9 @@ import { isSuiteId } from '@shared/suites/suite-factory'
 import type { AnyRequest } from '@shared/types/protocol'
 import type { SuiteItem } from '@shared/types/suite'
 import type { TreeNode } from '@shared/types/workspace'
-import { isCovered, pickerRows, selectionInOrder, toggleSelection } from './item-picker'
+import { isCovered, pickerChanges, pickerRows, selectionInOrder, toggleSelection } from './item-picker'
 import { addableNodes, describeItem } from './suite-items'
-import { appendItems, moveItem, removeItem } from './suite-operations'
+import { appendItems, applyChanges, moveItem, removeItem } from './suite-operations'
 
 const items: SuiteItem[] = ['a', 'b', 'c'].map((id) => ({ id, nodeId: `n_${id}` }))
 const ids = (list: SuiteItem[]) => list.map((item) => item.id)
@@ -93,5 +93,31 @@ describe('item picker', () => {
     expect(isCovered(nodes, selected, 'r1')).toBe(true)
     expect(selectionInOrder(nodes, selected)).toEqual(['f1', 'r3'])
     expect([...toggleSelection(nodes, selected, 'f1')]).toEqual(['r3'])
+  })
+})
+
+describe('picker changes', () => {
+  const nodes: TreeNode[] = [
+    { id: 'f1', parentId: null, kind: 'folder', name: 'Users', category: 'api' },
+    { id: 'r1', parentId: 'f1', kind: 'request', name: 'List', protocol: 'http' },
+    { id: 'r2', parentId: null, kind: 'request', name: 'Health', protocol: 'http' }
+  ]
+
+  it('adds what was ticked, removes what was unticked, and leaves deleted items alone', () => {
+    const initial = new Set(['r1', 'gone'])
+    expect(pickerChanges(nodes, initial, new Set(['r1', 'gone']))).toEqual({ added: [], removed: [] })
+    expect(pickerChanges(nodes, initial, new Set(['r2', 'gone']))).toEqual({ added: ['r2'], removed: ['r1'] })
+    expect(pickerChanges(nodes, initial, new Set(['f1', 'r1']))).toEqual({ added: ['f1'], removed: ['r1'] })
+  })
+
+  it('applies changes, keeping the order of what stays', () => {
+    const items = [
+      { id: 'a', nodeId: 'r1' },
+      { id: 'b', nodeId: 'r2' },
+      { id: 'c', nodeId: 'r1' }
+    ]
+    const next = applyChanges(items, { added: ['f1'], removed: ['r1'] })
+    expect(next.map((item) => item.nodeId)).toEqual(['r2', 'f1'])
+    expect(next[0]!.id).toBe('b')
   })
 })

@@ -44,3 +44,21 @@ export function selectionInOrder(nodes: TreeNode[], selected: Set<string>): stri
     .map(({ node }) => node.id)
     .filter((id) => selected.has(id) && !isCovered(nodes, selected, id))
 }
+
+export interface PickerChanges {
+  /** Newly ticked, in tree order. */
+  added: string[]
+  /** Unticked (or now covered by a ticked folder) since the picker opened. */
+  removed: string[]
+}
+
+/** What saving the picker changes in the suite. Items that are not in the tree (deleted) are never touched. */
+export function pickerChanges(nodes: TreeNode[], initial: Set<string>, selected: Set<string>): PickerChanges {
+  const chosen = selectionInOrder(nodes, selected)
+  const kept = new Set(chosen)
+  const pickable = new Set(addableNodes(nodes).map(({ node }) => node.id))
+  return {
+    added: chosen.filter((id) => !initial.has(id)),
+    removed: [...initial].filter((id) => pickable.has(id) && !kept.has(id))
+  }
+}
