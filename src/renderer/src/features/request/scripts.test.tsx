@@ -1,10 +1,11 @@
-import { screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import type { HttpResult } from '@shared/types/http'
 import { useConsoleStore } from '@/stores/console-store'
 import { useSessionVariables } from '@/stores/session-variables'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { openRequest, renderApp, type User } from '../../../test/render-app'
-import { installBridge } from '../../../test/wiremate-stub'
+import { echoResponse, installBridge } from '../../../test/wiremate-stub'
 
 async function writeScript(user: User, phase: 'Pre-request' | 'Post-response', code: string) {
   await user.click(screen.getByRole('tab', { name: /^Scripts/ }))
@@ -71,12 +72,40 @@ describe('request scripts', () => {
     await openRequest(user, 'API', /List users/)
     await writeScript(user, 'Post-response', "wm.env.set('ran', 'yes')")
     await user.click(screen.getByRole('button', { name: 'Send' }))
-    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+    const pending = await screen.findByRole('status', { name: 'Sending request' })
+    expect(pending).toHaveTextContent('Sending request…')
+    await user.click(within(pending).getByRole('button', { name: 'Cancel' }))
     expect(await screen.findByText('Cancelled')).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Sending request' })).not.toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Request cancelled')
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled()
     expect(localVariable('ran')).toBeUndefined()
     expect(useConsoleStore.getState().entries.at(-1)).toMatchObject({ level: 'warn', message: 'Request cancelled' })
+  })
+
+  it('hides the previous response while a new one is on its way', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    let respond: (result: HttpResult) => void = () => undefined
+    installBridge((request) =>
+      request.url.includes('slow') ? new Promise((resolve) => (respond = resolve)) : echoResponse(request)
+    )
+    const { user } = await renderApp()
+    await openRequest(user, 'API', /List users/)
+    await send(user)
+    expect(screen.getByRole('textbox', { name: 'Response body' })).toBeInTheDocument()
+
+    await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '?slow=1')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    const pending = await screen.findByRole('status', { name: 'Sending request' })
+    expect(screen.queryByRole('textbox', { name: 'Response body' })).not.toBeInTheDocument()
+    expect(screen.queryByText('200 OK')).not.toBeInTheDocument()
+    await act(() => vi.advanceTimersByTimeAsync(1500))
+    expect(pending).toHaveTextContent(/1\.[5-9]\d s/)
+
+    act(() => respond(echoResponse({ method: 'GET', url: 'https://httpbin.org/get?slow=1', headers: [], body: null })))
+    expect(await screen.findByText('200 OK')).toBeInTheDocument()
+    expect(screen.queryByRole('status', { name: 'Sending request' })).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 
   it('shows network errors in place of the body', async () => {
