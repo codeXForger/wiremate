@@ -17,10 +17,12 @@ function addHttpRequest(name: string, config: Partial<HttpConfig>): string {
   return id
 }
 
-async function addToSuite(user: User, name: string) {
-  await user.click(screen.getByRole('button', { name: 'Add request or folder' }))
-  // Request entries start with their method badge ("GET List users").
-  await user.click(await screen.findByRole('menuitem', { name: new RegExp(`^(GET )?${name}$`) }))
+/** Ticks the named requests or folders in the picker and adds them. */
+async function addToSuite(user: User, ...names: string[]) {
+  await user.click(screen.getByRole('button', { name: 'Add requests' }))
+  const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+  for (const name of names) await user.click(within(dialog).getByRole('checkbox', { name }))
+  await user.click(within(dialog).getByRole('button', { name: `Add ${names.length}` }))
 }
 
 async function newSuite(user: User) {
@@ -138,6 +140,59 @@ describe('test suites', () => {
     )
     expect(within(editor).getByRole('button', { name: 'Run suite' })).toBeEnabled()
     expect(useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]?.[0]?.stopped).toBe(true)
+  })
+
+  it('switches to the results when a run starts', async () => {
+    installBridge()
+    const { user } = await renderApp()
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    expect(within(editor).getByRole('tab', { name: /^Requests/ })).toHaveAttribute('aria-selected', 'true')
+    await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
+    expect(within(editor).getByRole('tab', { name: 'Results' })).toHaveAttribute('aria-selected', 'true')
+    expect(await within(editor).findByRole('status', { name: 'Run summary' })).toHaveTextContent('1 passed')
+  })
+
+  it('picks items in a searchable tree where a folder covers what is inside it', async () => {
+    const { user } = await renderApp()
+    addHttpRequest('Create user', { url: 'https://api.test/users' })
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    await user.click(within(editor).getByRole('button', { name: 'Add requests' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+    const list = within(dialog).getByRole('list', { name: 'Requests and folders' })
+    expect(within(dialog).getByRole('button', { name: 'Add' })).toBeDisabled()
+    expect(within(dialog).getByText('in suite')).toBeInTheDocument()
+
+    await user.type(within(dialog).getByRole('textbox', { name: 'Search requests and folders' }), 'create')
+    expect(
+      within(list)
+        .getAllByRole('checkbox')
+        .map((box) => box.getAttribute('aria-label'))
+    ).toEqual(['Public APIs', 'Create user'])
+    await user.clear(within(dialog).getByRole('textbox', { name: 'Search requests and folders' }))
+    await user.type(within(dialog).getByRole('textbox', { name: 'Search requests and folders' }), 'nothing like it')
+    expect(within(dialog).getByText('Nothing matches the search.')).toBeInTheDocument()
+    await user.clear(within(dialog).getByRole('textbox', { name: 'Search requests and folders' }))
+
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Create user' }))
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Public APIs' }))
+    expect(within(dialog).getByRole('checkbox', { name: 'Create user' })).toBeChecked()
+    expect(within(dialog).getByRole('checkbox', { name: 'Create user' })).toBeDisabled()
+    expect(within(dialog).getByText('1 selected')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Add 1' }))
+    expect(useSuiteStore.getState().suites[0]!.items.map((item) => item.nodeId)).toEqual(['r_f_api_0', 'f_api'])
+  })
+
+  it('cancels the picker without adding anything', async () => {
+    const { user } = await renderApp()
+    const editor = await newSuite(user)
+    await user.click(within(editor).getByRole('button', { name: 'Add requests' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Add to suite' })
+    await user.click(within(dialog).getByRole('checkbox', { name: 'List users' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(useSuiteStore.getState().suites[0]!.items).toEqual([])
   })
 
   it('reorders by drag and drop and flags deleted requests', async () => {

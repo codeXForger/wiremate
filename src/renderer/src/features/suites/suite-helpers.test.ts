@@ -5,15 +5,20 @@ import { isSuiteId } from '@shared/suites/suite-factory'
 import type { AnyRequest } from '@shared/types/protocol'
 import type { SuiteItem } from '@shared/types/suite'
 import type { TreeNode } from '@shared/types/workspace'
+import { isCovered, pickerRows, selectionInOrder, toggleSelection } from './item-picker'
 import { addableNodes, describeItem } from './suite-items'
-import { appendItem, moveItem, removeItem } from './suite-operations'
+import { appendItems, moveItem, removeItem } from './suite-operations'
 
 const items: SuiteItem[] = ['a', 'b', 'c'].map((id) => ({ id, nodeId: `n_${id}` }))
 const ids = (list: SuiteItem[]) => list.map((item) => item.id)
 
 describe('suite operations', () => {
   it('appends, removes and moves items', () => {
-    expect(appendItem(items, 'n_d').at(-1)?.nodeId).toBe('n_d')
+    expect(
+      appendItems(items, ['n_d', 'n_e'])
+        .map((item) => item.nodeId)
+        .slice(-2)
+    ).toEqual(['n_d', 'n_e'])
     expect(ids(removeItem(items, 'b'))).toEqual(['a', 'c'])
     expect(ids(moveItem(items, 0, 2))).toEqual(['b', 'c', 'a'])
     expect(ids(moveItem(items, 2, 0))).toEqual(['c', 'a', 'b'])
@@ -60,5 +65,33 @@ describe('run summary helpers', () => {
     expect(runPassed(summarizeRun([], 0))).toBe(true)
     expect(isSuiteId('suite_1')).toBe(true)
     expect(isSuiteId('req_1')).toBe(false)
+  })
+})
+
+describe('item picker', () => {
+  const nodes: TreeNode[] = [
+    { id: 'f1', parentId: null, kind: 'folder', name: 'Users', category: 'api' },
+    { id: 'f2', parentId: 'f1', kind: 'folder', name: 'Admin', category: 'api' },
+    { id: 'r1', parentId: 'f2', kind: 'request', name: 'Ban user', protocol: 'http' },
+    { id: 'r2', parentId: 'f1', kind: 'request', name: 'List', protocol: 'http' },
+    { id: 'r3', parentId: null, kind: 'request', name: 'Health', protocol: 'http' }
+  ]
+  const ids = (rows: { node: TreeNode }[]) => rows.map((row) => row.node.id)
+
+  it('shows matches with the folders above them and everything inside a matching folder', () => {
+    expect(ids(pickerRows(nodes, ''))).toEqual(['f1', 'f2', 'r1', 'r2', 'r3'])
+    expect(ids(pickerRows(nodes, 'BAN'))).toEqual(['f1', 'f2', 'r1'])
+    expect(ids(pickerRows(nodes, 'admin'))).toEqual(['f1', 'f2', 'r1'])
+    expect(ids(pickerRows(nodes, '  '))).toHaveLength(5)
+  })
+
+  it('lets a folder cover what is inside it and adds in tree order', () => {
+    let selected = toggleSelection(nodes, new Set(), 'r3')
+    selected = toggleSelection(nodes, selected, 'r1')
+    selected = toggleSelection(nodes, selected, 'f1')
+    expect([...selected].sort()).toEqual(['f1', 'r3'])
+    expect(isCovered(nodes, selected, 'r1')).toBe(true)
+    expect(selectionInOrder(nodes, selected)).toEqual(['f1', 'r3'])
+    expect([...toggleSelection(nodes, selected, 'f1')]).toEqual(['r3'])
   })
 })

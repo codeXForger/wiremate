@@ -1,8 +1,8 @@
 import type { SuiteItem } from '@shared/types/suite'
 import { createId } from '@shared/utils/id'
 
-export function appendItem(items: SuiteItem[], nodeId: string): SuiteItem[] {
-  return [...items, { id: createId('item'), nodeId }]
+export function appendItems(items: SuiteItem[], nodeIds: string[]): SuiteItem[] {
+  return [...items, ...nodeIds.map((nodeId) => ({ id: createId('item'), nodeId }))]
 }
 
 export function removeItem(items: SuiteItem[], itemId: string): SuiteItem[] {

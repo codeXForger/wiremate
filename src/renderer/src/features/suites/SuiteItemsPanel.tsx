@@ -1,8 +1,11 @@
+import { useState } from 'react'
+import { Plus } from 'lucide-react'
 import type { TestSuite } from '@shared/types/suite'
 import { Hint } from '@/components/Hint'
+import { Button } from '@/components/ui/button'
 import { useSuiteStore } from '@/stores/suite-store'
-import { AddItemMenu } from './AddItemMenu'
-import { appendItem } from './suite-operations'
+import { AddItemsDialog } from './AddItemsDialog'
+import { appendItems } from './suite-operations'
 import { SuiteItemList, type SetItems } from './SuiteItemList'
 import { SuiteOptionsBar } from './SuiteOptionsBar'
 
@@ -13,10 +16,24 @@ export function SuiteItemsPanel({ suite }: { suite: TestSuite }) {
   return (
     <div className="flex h-full flex-col overflow-auto">
       <div className="flex flex-wrap items-center gap-4 border-b px-3 py-2">
-        <AddItemMenu onAdd={(nodeId) => setItems(appendItem(suite.items, nodeId))} />
+        <AddItemsButton suite={suite} setItems={setItems} />
         <SuiteOptionsBar suite={suite} />
       </div>
       {suite.items.length === 0 ? <Hint>{EMPTY_HINT}</Hint> : <SuiteItemList items={suite.items} setItems={setItems} />}
     </div>
+  )
+}
+
+function AddItemsButton({ suite, setItems }: { suite: TestSuite; setItems: SetItems }) {
+  const [open, setOpen] = useState(false)
+  const inSuite = new Set(suite.items.map((item) => item.nodeId))
+  const add = (nodeIds: string[]): void => setItems(appendItems(suite.items, nodeIds))
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus /> Add requests
+      </Button>
+      {open && <AddItemsDialog inSuite={inSuite} onAdd={add} onClose={() => setOpen(false)} />}
+    </>
   )
 }
