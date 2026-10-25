@@ -1,6 +1,7 @@
 import { CircleCheck, CircleStop, CircleX, LoaderCircle } from 'lucide-react'
 import { formatDuration } from '@shared/utils/format'
 import { cn } from '@/lib/utils'
+import { ReportButton } from './ReportButton'
 import type { RunState, RunView } from './run-view'
 
 const STATE_STYLE: Record<RunState, { icon: typeof CircleCheck; tone: string }> = {
@@ -28,6 +29,7 @@ export function RunHeader({ view }: { view: RunView }) {
       </span>
       <span className="text-xs text-muted-foreground">{meta.join(' · ')}</span>
       <span className="ml-auto text-xs text-muted-foreground">{`Total ${formatDuration(view.summary.durationMs)}`}</span>
+      {view.run && <ReportButton key={view.run.id} run={view.run} />}
     </div>
   )
 }

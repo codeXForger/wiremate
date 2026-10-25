@@ -29,7 +29,9 @@ export const IpcChannel = {
   saveSuite: 'suites:save',
   deleteSuite: 'suites:delete',
   listRuns: 'runs:list',
-  saveRun: 'runs:save'
+  saveRun: 'runs:save',
+  savePdfReport: 'report:save-pdf',
+  openReport: 'report:open'
 } as const
 
 /** One-way messages around closing a window: main asks, the renderer saves what is pending, then answers. */
@@ -70,6 +72,10 @@ export interface WireMateApi extends WorkspaceStorageApi, SuiteStorageApi {
   sendHttp(request: WireRequest, transferId?: string): Promise<HttpResult>
   cancelHttp(transferId: string): Promise<void>
   runScript(run: ScriptRun): Promise<ScriptOutcome>
+  /** Saves a finished run as a PDF where the user chooses; resolves to the path, or null when cancelled. */
+  savePdfReport(run: SuiteRun): Promise<string | null>
+  /** Opens a report this app saved; any other path is ignored. */
+  openReport(path: string): Promise<void>
   /** Registers the work to finish (pending saves) before the window closes. */
   onBeforeClose(finish: () => Promise<void>): void
 }

@@ -13,6 +13,8 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     sendHttp: vi.fn(),
     cancelHttp: vi.fn().mockResolvedValue(undefined),
     onBeforeClose: vi.fn(),
+    savePdfReport: vi.fn().mockResolvedValue('/reports/run.pdf'),
+    openReport: vi.fn().mockResolvedValue(undefined),
     runScript: vi.fn(),
     listWorkspaces: vi.fn().mockResolvedValue([]),
     createWorkspace: vi.fn(),

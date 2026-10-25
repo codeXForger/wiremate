@@ -95,7 +95,7 @@ explorer order). Reorder by dragging or with the arrow buttons. A suite can stop
 between requests. **Run suite** uses the active environment, carries variables from one request to the next and
 shows live progress, passed and failed requests and tests, and timings. **Stop** cancels the request in flight and
 skips the rest. Every run is saved to the suite's
-**History**.
+**History**, and **Download PDF** saves any finished run as a printable report.
 
 ## Scripts
 

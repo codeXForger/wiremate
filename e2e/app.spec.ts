@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
@@ -201,6 +201,16 @@ test('builds and runs a test suite', async () => {
   await expect(editor.getByRole('group', { name: 'Requests' })).toContainText('2 passed, 0 failed')
   await expect(editor.getByRole('group', { name: 'Tests' })).toContainText('1 passed, 0 failed')
   await screenshot('suite-dashboard')
+
+  // Answer the save dialog in the main process, then check a real PDF was written.
+  const pdfPath = join(home, 'report.pdf')
+  await app.evaluate(({ dialog }, path) => {
+    dialog.showSaveDialog = () => Promise.resolve({ canceled: false, filePath: path })
+  }, pdfPath)
+  await editor.getByRole('button', { name: 'Download PDF' }).click()
+  await expect(editor.getByText('PDF saved')).toBeVisible()
+  expect(readFileSync(pdfPath).subarray(0, 5).toString()).toBe('%PDF-')
+  if (process.env['SCREENSHOTS']) copyFileSync(pdfPath, 'test-results/report.pdf')
   await editor.getByRole('tab', { name: 'History 1' }).click()
   await expect(editor.getByRole('list', { name: 'Past runs' }).getByRole('listitem')).toHaveCount(1)
   await screenshot('suite')

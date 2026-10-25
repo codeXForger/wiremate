@@ -13,12 +13,14 @@ export interface RunView {
   state: RunState
   /** Requests the run will send in all; more than `results` while it is running. */
   total: number
+  /** The saved run, once it has finished. */
+  run?: SuiteRun
 }
 
 export function viewOfRun(run: SuiteRun): RunView {
   const state: RunState = run.stopped ? 'stopped' : runPassed(run.summary) ? 'passed' : 'failed'
   const { results, summary, startedAt, environmentName } = run
-  return { results, summary, startedAt, environmentName, state, total: results.length }
+  return { results, summary, startedAt, environmentName, state, total: results.length, run }
 }
 
 export function viewOfLive(live: LiveRun, now: number): RunView {

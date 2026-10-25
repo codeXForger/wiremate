@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { DialogController } from './dialog-controller'
 import { HttpClient } from './http/http-client'
+import { ReportController } from './reports/report-controller'
 import { RequestController } from './request-controller'
 import { ScriptRunner } from './scripting/script-runner'
 import scriptWorkerPath from './scripting/script-worker?modulePath'
@@ -30,6 +31,7 @@ function registerControllers(): void {
     scripts: new ScriptRunner({ workerPath: scriptWorkerPath })
   }).register()
   new WorkspaceController(workspaces, new SuiteFileStore()).register()
+  new ReportController().register()
 }
 
 function bootstrap(): void {

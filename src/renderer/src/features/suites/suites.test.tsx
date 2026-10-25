@@ -1,5 +1,5 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { HttpConfig } from '@shared/types/protocol'
 import { services } from '@/services'
 import { useConsoleStore } from '@/stores/console-store'
@@ -165,6 +165,41 @@ describe('test suites', () => {
     )
     expect(within(editor).getByRole('button', { name: 'Run suite' })).toBeEnabled()
     expect(useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]?.[0]?.stopped).toBe(true)
+  })
+
+  it('saves the run as a PDF report and opens it', async () => {
+    const bridge = installBridge()
+    const { user } = await renderApp()
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
+    const { header } = await dashboard(editor)
+    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    const run = useSuiteStore.getState().history[useSuiteStore.getState().suites[0]!.id]![0]!
+    expect(bridge.savePdfReport).toHaveBeenCalledWith(run)
+    expect(await within(header).findByText('PDF saved')).toBeInTheDocument()
+    await user.click(within(header).getByRole('button', { name: 'Open' }))
+    expect(bridge.openReport).toHaveBeenCalledWith('/reports/run.pdf')
+
+    vi.mocked(bridge.savePdfReport).mockResolvedValueOnce(null)
+    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    await waitFor(() => expect(within(header).queryByText('PDF saved')).not.toBeInTheDocument())
+    vi.mocked(bridge.savePdfReport).mockRejectedValueOnce(new Error('disk full'))
+    await user.click(within(header).getByRole('button', { name: 'Download PDF' }))
+    expect(await within(header).findByText('Could not save: disk full')).toBeInTheDocument()
+  })
+
+  it('offers no PDF outside the desktop app', async () => {
+    installBridge()
+    const { user } = await renderApp()
+    const editor = await newSuite(user)
+    await addToSuite(user, 'List users')
+    await user.click(within(editor).getByRole('button', { name: 'Run suite' }))
+    await dashboard(editor)
+    delete window.wiremate
+    await user.click(within(editor).getByRole('tab', { name: /^Requests/ }))
+    await user.click(within(editor).getByRole('tab', { name: 'Results' }))
+    expect(within(editor).queryByRole('button', { name: 'Download PDF' })).not.toBeInTheDocument()
   })
 
   it('switches to the results when a run starts', async () => {
