@@ -75,6 +75,10 @@ console.log('logged in as', wm.response.json().user.name)
 | `wm.expect(value)`                                        | `toBe`, `toEqual`, `toContain`, `toHaveProperty`, `toMatch`, `toBeOneOf`, `toBeLessThan`… and `.not` |
 | `console.log / info / warn / error`                       | Shown in the Console                                                                                 |
 
+`console.log(wm.request)` shows the method, URL, params, headers and body; `console.log(wm.response)` shows the
+status, time, size, headers and body (parsed when it is JSON). In the post-response script `wm.request` is the
+request as it was sent, with `{{variables}}` filled in.
+
 Scripts may use `await` at the top level. Each one runs in a worker thread of the main process, in a `node:vm`
 context without `require` or `process`, and is stopped after five seconds. That keeps a script away from the app,
 but it is not a security sandbox: only run scripts you trust.

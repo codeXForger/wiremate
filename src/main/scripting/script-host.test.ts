@@ -102,6 +102,69 @@ describe('executeScript', () => {
     expect(outcome.logs[0]?.message).toBe('pre true true {"hello":"world"}')
   })
 
+  it('reads query params from the request that was sent', async () => {
+    const request = { method: 'GET' as const, url: 'http://h/users?page=2&q=a%20b&flag#top', headers: [], body: null }
+    const outcome = await executeScript(
+      run(
+        `console.log(wm.request.params.get('page'), wm.request.params.get('q'), wm.request.params.has('flag'), wm.request.params.get('nope'))
+         console.log(wm.request.params)`,
+        { request }
+      ),
+      evaluate
+    )
+    expect(outcome.logs.map((log) => log.message)).toEqual([
+      '2 a b true undefined',
+      '{\n  "page": "2",\n  "q": "a b",\n  "flag": ""\n}'
+    ])
+  })
+
+  it('lets a pre-request script set and remove query params', async () => {
+    const request = { method: 'GET' as const, url: 'http://h/users?page=2&tag=a&tag=b#top', headers: [], body: null }
+    const outcome = await executeScript(
+      run(
+        "wm.request.params.set('page', 3); wm.request.params.set('tag', 'c'); wm.request.params.set('limit', 10); wm.request.params.remove('nothing')",
+        {
+          phase: 'pre',
+          request
+        }
+      ),
+      evaluate
+    )
+    expect(outcome.request.url).toBe('http://h/users?page=3&tag=c&limit=10#top')
+    const removed = await executeScript(run("wm.request.params.remove('page')", { phase: 'pre', request }), evaluate)
+    expect(removed.request.url).toBe('http://h/users?tag=a&tag=b#top')
+  })
+
+  it('logs the request and response as readable objects', async () => {
+    const request = {
+      method: 'POST' as const,
+      url: 'http://h/x?id=7',
+      headers: [{ key: 'Accept', value: '*/*' }],
+      body: '{}'
+    }
+    const outcome = await executeScript(run('console.log(wm.request); console.log(wm.response)', { request }), evaluate)
+    expect(JSON.parse(outcome.logs[0]!.message)).toEqual({
+      method: 'POST',
+      url: 'http://h/x?id=7',
+      params: { id: '7' },
+      headers: { Accept: '*/*' },
+      body: '{}'
+    })
+    expect(JSON.parse(outcome.logs[1]!.message)).toEqual({
+      status: 200,
+      statusText: 'OK',
+      time: 25,
+      size: 30,
+      headers: { 'Content-Type': 'application/json' },
+      body: { token: 'abc', items: [1, 2] }
+    })
+    const text = await executeScript(
+      run('console.log(wm.response)', { response: { ...response, body: 'plain' } }),
+      evaluate
+    )
+    expect(JSON.parse(text.logs[0]!.message)).toMatchObject({ body: 'plain' })
+  })
+
   it('clears the body and rejects unknown methods', async () => {
     const cleared = await executeScript(run('wm.request.body = null'), evaluate)
     expect(cleared.request.body).toBeNull()

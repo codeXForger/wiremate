@@ -18,7 +18,7 @@ export function splitUrl(url: string): UrlParts {
 }
 
 /** `a=1&b&c=x=y` → [a: 1, b: '', c: 'x=y']. Values stay as typed (no decoding), like the URL bar shows them. */
-export function parseQuery(query: string): { key: string; value: string }[] {
+export function parseQuery(query: string): QueryPair[] {
   return query
     .split('&')
     .filter((part) => part !== '')
@@ -32,11 +32,21 @@ function enabledParams(params: KeyValue[]): KeyValue[] {
   return params.filter((row) => row.enabled && row.key !== '')
 }
 
+export interface QueryPair {
+  key: string
+  value: string
+}
+
+/** The URL with its query replaced by these pairs (`key` alone when the value is empty). */
+export function urlWithQuery(url: string, pairs: QueryPair[]): string {
+  const { base, hash } = splitUrl(url)
+  const parts = pairs.map(({ key, value }) => (value === '' ? key : `${key}=${value}`))
+  return `${base}${parts.length > 0 ? `?${parts.join('&')}` : ''}${hash}`
+}
+
 /** The URL with its query rebuilt from the enabled params; disabled or nameless rows stay out of it. */
 export function urlWithParams(url: string, params: KeyValue[]): string {
-  const { base, hash } = splitUrl(url)
-  const pairs = enabledParams(params).map(({ key, value }) => (value === '' ? key : `${key}=${value}`))
-  return `${base}${pairs.length > 0 ? `?${pairs.join('&')}` : ''}${hash}`
+  return urlWithQuery(url, enabledParams(params))
 }
 
 /**

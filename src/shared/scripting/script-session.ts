@@ -3,6 +3,7 @@ import type { HeaderPair, WireRequest, WireResponse } from '../types/http'
 import { HTTP_METHODS, type HttpMethod } from '../types/protocol'
 import type { LogLevel, ScriptLog, ScriptOutcome, ScriptRun, TestResult } from '../types/scripting'
 import { errorMessage, formatLogArgument } from './describe'
+import { RequestParams } from './request-params'
 import { expect } from './expect'
 
 type Globals = Record<string, unknown>
@@ -47,19 +48,32 @@ function headerReader(headers: () => HeaderPair[]): Globals {
   return {
     get: (name: string) => findHeader(headers(), name)?.value,
     has: (name: string) => findHeader(headers(), name) !== undefined,
-    all: () => Object.fromEntries(headers().map(({ key, value }) => [key, value]))
+    all: () => headerObject(headers())
+  }
+}
+
+function headerObject(headers: HeaderPair[]): Record<string, string> {
+  return Object.fromEntries(headers.map(({ key, value }) => [key, value]))
+}
+
+/** The body as JSON when it parses, otherwise as text: what `console.log(wm.response)` shows. */
+function readableBody(body: string): unknown {
+  try {
+    return JSON.parse(body)
+  } catch {
+    return body
   }
 }
 
 function responseApi(response: WireResponse): Globals {
+  const { status, statusText, timings, sizeBytes: size } = response
+  const summary = { status, statusText, time: timings.totalMs, size }
   return {
-    status: response.status,
-    statusText: response.statusText,
-    time: response.timings.totalMs,
-    size: response.sizeBytes,
+    ...summary,
     headers: headerReader(() => response.headers),
     text: () => response.body,
-    json: (): unknown => JSON.parse(response.body)
+    json: (): unknown => JSON.parse(response.body),
+    toJSON: () => ({ ...summary, headers: headerObject(response.headers), body: readableBody(response.body) })
   }
 }
 
@@ -115,7 +129,13 @@ export class ScriptSession {
   }
 
   private requestApi(): Globals {
-    return Object.defineProperties<Globals>({ headers: this.requestHeaders() }, requestAccessors(this.request))
+    const request = this.request
+    const params = new RequestParams(request)
+    const toJSON = (): Globals => ({ ...request, params: params.all(), headers: headerObject(request.headers) })
+    return Object.defineProperties<Globals>(
+      { headers: this.requestHeaders(), params, toJSON },
+      requestAccessors(request)
+    )
   }
 
   private requestHeaders(): Globals {

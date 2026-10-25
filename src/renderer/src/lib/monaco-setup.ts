@@ -24,6 +24,14 @@ interface WmRequestHeaders extends WmHeaders {
   set(name: string, value: string | number): void
   remove(name: string): void
 }
+/** Query parameters of the request URL. Values are decoded; set and remove rewrite the URL (pre-request). */
+interface WmParams {
+  get(name: string): string | undefined
+  has(name: string): boolean
+  all(): Record<string, string>
+  set(name: string, value: string | number): void
+  remove(name: string): void
+}
 interface WmMatchers {
   readonly not: WmMatchers
   toBe(expected: unknown): void
@@ -52,8 +60,11 @@ declare const wm: {
     has(name: string): boolean
     all(): Record<string, string>
   }
-  /** The request being sent. In the pre-request script it can still be changed. */
-  request: { method: string; url: string; body: string | null; headers: WmRequestHeaders }
+  /**
+   * The request being sent; in the post-response script, the one that was sent, with {{variables}} filled in.
+   * In the pre-request script it can still be changed. console.log(wm.request) shows all of it.
+   */
+  request: { method: string; url: string; body: string | null; headers: WmRequestHeaders; params: WmParams }
   /** The response. Only defined in the post-response script. */
   response: {
     status: number
