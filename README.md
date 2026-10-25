@@ -65,16 +65,16 @@ wm.env.set('token', wm.response.json().token)
 console.log('logged in as', wm.response.json().user.name)
 ```
 
-| API                                                       | Notes                                                                                                |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `wm.env.get / set / unset / has / all`                    | Active environment; kept for the session if none active                                              |
-| `wm.request.method / url / body / headers.get/set/remove` | Writable in the pre-request script                                                                   |
-| `wm.request.params.get / has / all / set / remove`        | Query params of the URL, decoded; `set` and `remove` rewrite it                                      |
-| `wm.response.status / statusText / time / size`           | Post-response only; `time` is in milliseconds                                                        |
-| `wm.response.headers.get(name) / text() / json()`         |                                                                                                      |
-| `wm.test(name, fn)`                                       | Fails when `fn` throws or its promise rejects                                                        |
-| `wm.expect(value)`                                        | `toBe`, `toEqual`, `toContain`, `toHaveProperty`, `toMatch`, `toBeOneOf`, `toBeLessThan`… and `.not` |
-| `console.log / info / warn / error`                       | Shown in the Console                                                                                 |
+| API                                                         | Notes                                                                                                |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `wm.env.get / set / unset / has / all`                      | Active environment; kept for the session if none active                                              |
+| `wm.request.method / url / body / headers.get/set/remove`   | Writable in the pre-request script                                                                   |
+| `wm.request.params.page`, `.get / has / all / set / remove` | Query params of the URL, decoded; assigning, `delete`, `set` and `remove` rewrite it (pre-request)   |
+| `wm.response.status / statusText / time / size`             | Post-response only; `time` is in milliseconds                                                        |
+| `wm.response.headers.get(name) / text() / json()`           |                                                                                                      |
+| `wm.test(name, fn)`                                         | Fails when `fn` throws or its promise rejects                                                        |
+| `wm.expect(value)`                                          | `toBe`, `toEqual`, `toContain`, `toHaveProperty`, `toMatch`, `toBeOneOf`, `toBeLessThan`… and `.not` |
+| `console.log / info / warn / error`                         | Shown in the Console                                                                                 |
 
 `console.log(wm.request)` shows the method, URL, params, headers and body; `console.log(wm.response)` shows the
 status, time, size, headers and body (parsed when it is JSON). In the post-response script `wm.request` is the

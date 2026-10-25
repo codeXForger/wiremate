@@ -24,14 +24,18 @@ interface WmRequestHeaders extends WmHeaders {
   set(name: string, value: string | number): void
   remove(name: string): void
 }
-/** Query parameters of the request URL. Values are decoded; set and remove rewrite the URL (pre-request). */
-interface WmParams {
+/**
+ * Query parameters of the request URL, decoded. Read them as params.page or params.get('page'). In the pre-request
+ * script, assigning (params.page = 2), delete, set and remove rewrite the URL.
+ */
+interface WmParamMethods {
   get(name: string): string | undefined
   has(name: string): boolean
   all(): Record<string, string>
   set(name: string, value: string | number): void
   remove(name: string): void
 }
+type WmParams = WmParamMethods & { [name: string]: any }
 interface WmMatchers {
   readonly not: WmMatchers
   toBe(expected: unknown): void

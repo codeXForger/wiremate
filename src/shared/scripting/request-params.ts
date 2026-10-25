@@ -55,3 +55,30 @@ export class RequestParams {
     this.request.url = urlWithQuery(this.request.url, pairs)
   }
 }
+
+type Methods = Pick<RequestParams, 'get' | 'has' | 'all' | 'set' | 'remove' | 'toJSON'>
+
+function paramsHandler(params: RequestParams): ProxyHandler<Record<string, unknown>> {
+  const { get, has, all, set, remove, toJSON } = params
+  const methods: Methods = { get, has, all, set, remove, toJSON }
+  const isMethod = (key: string): key is keyof Methods => Object.hasOwn(methods, key)
+  const named = (key: string | symbol): key is string => typeof key === 'string'
+  return {
+    get: (_target, key) => (!named(key) ? undefined : isMethod(key) ? methods[key] : get(key)),
+    has: (_target, key) => named(key) && (isMethod(key) || has(key)),
+    ownKeys: () => Object.keys(all()),
+    getOwnPropertyDescriptor: (_target, key) =>
+      named(key) && has(key) ? { value: get(key), enumerable: true, configurable: true } : undefined,
+    set: (_target, key, value) => (named(key) && set(key, value), true),
+    deleteProperty: (_target, key) => (named(key) && remove(key), true)
+  }
+}
+
+/**
+ * What scripts see as `wm.request.params`: the methods above, and each param as a property too, so
+ * `params.page`, `Object.keys(params)` and `'page' in params` work like on a plain object. Assigning or deleting a
+ * property sets or removes the param. A param named like a method is still reachable with `params.get(name)`.
+ */
+export function paramsObject(params: RequestParams): Record<string, unknown> {
+  return new Proxy<Record<string, unknown>>({}, paramsHandler(params))
+}

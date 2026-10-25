@@ -118,6 +118,36 @@ describe('executeScript', () => {
     ])
   })
 
+  it('reads params as properties too, like a plain object', async () => {
+    const request = { method: 'GET' as const, url: 'http://h/users?page=4&size=10&get=x', headers: [], body: null }
+    const outcome = await executeScript(
+      run(
+        `const params = wm.request.params
+         console.log(params.page, params['size'], params.missing, 'page' in params, 'nope' in params, 'all' in params)
+         console.log(Object.keys(params).join(), JSON.stringify({ ...params }), params.get('get'), typeof params[Symbol.iterator])`,
+        { request }
+      ),
+      evaluate
+    )
+    expect(outcome.logs.map((log) => log.message)).toEqual([
+      '4 10 undefined true false true',
+      // A param named like a method reads as the method; params.get(name) still returns its value.
+      'page,size,get {"page":"4","size":"10"} x undefined'
+    ])
+  })
+
+  it('sets and deletes params through properties in a pre-request script', async () => {
+    const request = { method: 'GET' as const, url: 'http://h/users?page=1&debug', headers: [], body: null }
+    const outcome = await executeScript(
+      run('wm.request.params.page = 2; wm.request.params.size = 10; delete wm.request.params.debug', {
+        phase: 'pre',
+        request
+      }),
+      evaluate
+    )
+    expect(outcome.request.url).toBe('http://h/users?page=2&size=10')
+  })
+
   it('lets a pre-request script set and remove query params', async () => {
     const request = { method: 'GET' as const, url: 'http://h/users?page=2&tag=a&tag=b#top', headers: [], body: null }
     const outcome = await executeScript(

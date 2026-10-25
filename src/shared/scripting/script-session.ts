@@ -3,7 +3,7 @@ import type { HeaderPair, WireRequest, WireResponse } from '../types/http'
 import { HTTP_METHODS, type HttpMethod } from '../types/protocol'
 import type { LogLevel, ScriptLog, ScriptOutcome, ScriptRun, TestResult } from '../types/scripting'
 import { errorMessage, formatLogArgument } from './describe'
-import { RequestParams } from './request-params'
+import { paramsObject, RequestParams } from './request-params'
 import { expect } from './expect'
 
 type Globals = Record<string, unknown>
@@ -133,7 +133,7 @@ export class ScriptSession {
     const params = new RequestParams(request)
     const toJSON = (): Globals => ({ ...request, params: params.all(), headers: headerObject(request.headers) })
     return Object.defineProperties<Globals>(
-      { headers: this.requestHeaders(), params, toJSON },
+      { headers: this.requestHeaders(), params: paramsObject(params), toJSON },
       requestAccessors(request)
     )
   }
