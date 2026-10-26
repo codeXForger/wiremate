@@ -34,6 +34,14 @@ export interface HttpConfig {
   headers: KeyValue[]
   body: { mode: BodyMode; content: string }
   auth: { type: AuthType; token: string; username: string; password: string }
+  scripts: HttpScripts
+}
+
+export interface HttpScripts {
+  /** Runs before the request is sent. */
+  pre: string
+  /** Runs after the response arrives. */
+  post: string
 }
 
 export interface GraphqlConfig {

@@ -8,7 +8,9 @@ import type { WorkspaceState } from './workspace-types'
 
 export type WorkspaceStore = UseBoundStore<StoreApi<WorkspaceState>>
 
-export function createWorkspaceStore(repository: WorkspaceRepository): WorkspaceStore {
+export function createWorkspaceStore(
+  repository: () => WorkspaceRepository = () => services.workspaces
+): WorkspaceStore {
   return create<WorkspaceState>()((...args) => ({
     ...createWorkspaceSlice(repository)(...args),
     ...createTreeSlice(...args),
@@ -16,4 +18,4 @@ export function createWorkspaceStore(repository: WorkspaceRepository): Workspace
   }))
 }
 
-export const useWorkspaceStore = createWorkspaceStore(services.workspaces)
+export const useWorkspaceStore = createWorkspaceStore()

@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { useUiStore } from '@/stores/ui-store'
+import { saveQueue } from '@/stores/workspace-persistence'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export function WorkspaceSwitcher() {
@@ -42,7 +43,7 @@ function WorkspaceMenu() {
 function WorkspaceItems() {
   const { workspaces, activeWorkspaceId, openWorkspace } = useWorkspaceStore()
   return workspaces.map((ws) => (
-    <DropdownMenuItem key={ws.id} onSelect={() => void openWorkspace(ws.id)}>
+    <DropdownMenuItem key={ws.id} onSelect={() => void saveQueue.flush().then(() => openWorkspace(ws.id))}>
       {ws.id === activeWorkspaceId ? <Check /> : <span className="w-3.5" />} {ws.name}
     </DropdownMenuItem>
   ))

@@ -8,6 +8,12 @@ export function createAndOpenRequest(parentId: string | null, protocol: Protocol
   useTabStore.getState().open(useWorkspaceStore.getState().addRequest(parentId, protocol))
 }
 
+/** Duplicates a request and opens the copy in a tab. */
+export function duplicateAndOpen(requestId: string): void {
+  const copyId = useWorkspaceStore.getState().duplicateRequest(requestId)
+  if (copyId) useTabStore.getState().open(copyId)
+}
+
 /** Single-protocol categories create the request straight away; others ask which protocol to use. */
 export function startNewRequest(parentId: string | null, category: CategoryId): void {
   const [first, ...others] = CATEGORIES[category].protocols

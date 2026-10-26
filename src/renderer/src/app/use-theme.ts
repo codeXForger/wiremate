@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
-import { useUiStore } from '@/stores/ui-store'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export function useApplyTheme(): void {
-  const theme = useUiStore((state) => state.theme)
+  const theme = useWorkspaceStore((state) => state.theme)
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
   }, [theme])

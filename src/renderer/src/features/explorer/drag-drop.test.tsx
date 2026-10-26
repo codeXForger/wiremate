@@ -1,5 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { goTo, renderApp } from '../../../test/render-app'
 import { useDragStore } from './drag-store'
@@ -29,6 +29,24 @@ function drag(source: HTMLElement, target: HTMLElement): DataTransfer {
 /** jsdom has no DragEvent, so fireEvent drops relatedTarget; a MouseEvent carries it. */
 function leave(element: HTMLElement, relatedTarget: EventTarget): void {
   fireEvent(element, new MouseEvent('dragleave', { bubbles: true, relatedTarget }))
+}
+
+/** Row heights are 28px in the app; jsdom has no layout, so give the target one and point at the right spot. */
+const OFFSETS = { before: 2, inside: 14, after: 26 }
+
+function drop(source: HTMLElement, target: HTMLElement, position: keyof typeof OFFSETS): void {
+  vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 100, 200, 28))
+  const transfer = dataTransfer()
+  const clientY = 100 + OFFSETS[position]
+  fireEvent.dragStart(source, { dataTransfer: transfer })
+  // jsdom has no DragEvent and drops clientY from a plain Event; a MouseEvent carries it (dragover and drop
+  // do not read dataTransfer).
+  fireEvent(target, new MouseEvent('dragover', { bubbles: true, cancelable: true, clientY }))
+  fireEvent(target, new MouseEvent('drop', { bubbles: true, cancelable: true, clientY }))
+}
+
+function names(): string[] {
+  return screen.getAllByRole('treeitem').map((row) => row.textContent?.replace(/^(GET|HTTP)/, '').trim() ?? '')
 }
 
 function parentOf(name: string): string | null | undefined {
@@ -91,13 +109,37 @@ describe('drag and drop in the collections tree', () => {
     expect(useDragStore.getState()).toMatchObject({ draggingId: null, overTarget: null })
   })
 
-  it("drops onto a request into that request's collection", async () => {
+  it("places a request below another one, inside that one's collection", async () => {
     const { user } = await renderApp()
     await user.click(screen.getByRole('button', { name: 'New HTTP request' }))
     const transfer = drag(item(/HTTP request/), item(/List users/))
-    expect(item(/Public APIs/).className).toContain('outline-primary')
+    expect(item(/List users/).className).toContain('inset_0_-2px_0')
     fireEvent.drop(item(/List users/), { dataTransfer: transfer })
     expect(parentOf('HTTP request')).toBe('f_api')
+    expect(names()).toEqual(['Public APIs', 'List users', 'HTTP request'])
+  })
+
+  it('reorders by the edge of the row the request is dropped on', async () => {
+    const { user } = await renderApp()
+    await user.click(screen.getByRole('button', { name: 'New HTTP request' }))
+    drop(item(/HTTP request/), item(/List users/), 'after')
+    drop(item(/HTTP request/), item(/List users/), 'before')
+    expect(names()).toEqual(['Public APIs', 'HTTP request', 'List users'])
+    drop(item(/HTTP request/), item(/Public APIs/), 'before')
+    expect(names()).toEqual(['HTTP request', 'Public APIs', 'List users'])
+    expect(parentOf('HTTP request')).toBeNull()
+    drop(item(/HTTP request/), item(/Public APIs/), 'inside')
+    expect(names()).toEqual(['Public APIs', 'List users', 'HTTP request'])
+    expect(parentOf('HTTP request')).toBe('f_api')
+  })
+
+  it('keeps the order when a request is renamed', async () => {
+    const { user } = await renderApp()
+    await user.click(screen.getByRole('button', { name: 'New HTTP request' }))
+    drop(item(/HTTP request/), item(/List users/), 'before')
+    const id = useWorkspaceStore.getState().nodes.find((n) => n.name === 'HTTP request')!.id
+    act(() => useWorkspaceStore.getState().renameNode(id, 'Zebra'))
+    expect(names()).toEqual(['Public APIs', 'Zebra', 'List users'])
   })
 
   it('ignores drag events that did not start in the tree', async () => {

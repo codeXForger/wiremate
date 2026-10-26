@@ -13,12 +13,16 @@ export interface Renameable {
 interface RenameInputProps {
   target: Renameable
   onDone: () => void
+  /** Saves the new name. Defaults to renaming a node of the workspace tree. */
+  onRename?: (id: string, name: string) => void
 }
 
-function useRename({ target, onDone }: RenameInputProps) {
+const renameNode = (id: string, name: string): void => useWorkspaceStore.getState().renameNode(id, name)
+
+function useRename({ target, onDone, onRename = renameNode }: RenameInputProps) {
   const [value, setValue] = useState(target.name)
   const commit = (): void => {
-    if (value.trim()) useWorkspaceStore.getState().renameNode(target.id, value.trim())
+    if (value.trim()) onRename(target.id, value.trim())
     onDone()
   }
   const onChange = (event: ChangeEvent<HTMLInputElement>): void => setValue(event.target.value)

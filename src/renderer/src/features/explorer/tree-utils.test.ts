@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { TreeNode } from '@shared/types/workspace'
-import { canMoveNode, childrenOf, collectSubtreeIds, nodeCategory, renameNode, uniqueName } from './tree-utils'
+import {
+  canMoveNode,
+  canPlaceNode,
+  childrenOf,
+  collectSubtreeIds,
+  nodeCategory,
+  placeNode,
+  renameNode,
+  uniqueName
+} from './tree-utils'
 
 const nodes: TreeNode[] = [
   { id: 'r1', parentId: null, kind: 'request', name: 'b request', protocol: 'http' },
@@ -12,8 +21,8 @@ const nodes: TreeNode[] = [
 ]
 
 describe('childrenOf', () => {
-  it('lists folders first, then requests, each alphabetically', () => {
-    expect(childrenOf(nodes, null).map((n) => n.id)).toEqual(['f2', 'f1', 'r3', 'r1'])
+  it('keeps the order the user arranged, not alphabetical', () => {
+    expect(childrenOf(nodes, null).map((n) => n.id)).toEqual(['r1', 'f1', 'f2', 'r3'])
   })
 })
 
@@ -79,5 +88,36 @@ describe('canMoveNode', () => {
     { name: 'into an unknown folder', id: 'req', target: 'missing', allowed: false }
   ])('moving $name → $allowed', ({ id, target, allowed }) => {
     expect(canMoveNode(tree, id, target)).toBe(allowed)
+  })
+})
+
+describe('placing nodes', () => {
+  const api: TreeNode[] = [
+    { id: 'a', parentId: null, kind: 'request', name: 'a', protocol: 'http' },
+    { id: 'f', parentId: null, kind: 'folder', name: 'f', category: 'api' },
+    { id: 'b', parentId: 'f', kind: 'request', name: 'b', protocol: 'http' },
+    { id: 'c', parentId: 'f', kind: 'request', name: 'c', protocol: 'http' },
+    { id: 'k', parentId: null, kind: 'folder', name: 'kafka', category: 'kafka' }
+  ]
+  const order = (list: TreeNode[], parentId: string | null) => childrenOf(list, parentId).map((n) => n.id)
+
+  it('reorders within a folder', () => {
+    expect(order(placeNode(api, 'c', { id: 'b', position: 'before' }), 'f')).toEqual(['c', 'b'])
+    expect(order(placeNode(api, 'b', { id: 'c', position: 'after' }), 'f')).toEqual(['c', 'b'])
+  })
+
+  it("moves into the target node's folder", () => {
+    const moved = placeNode(api, 'a', { id: 'b', position: 'after' })
+    expect(order(moved, 'f')).toEqual(['b', 'a', 'c'])
+    expect(order(moved, null)).toEqual(['f', 'k'])
+  })
+
+  it('refuses itself, its own subtree, other sections and unknown nodes', () => {
+    expect(canPlaceNode(api, 'b', 'c')).toBe(true)
+    expect(canPlaceNode(api, 'b', 'b')).toBe(false)
+    expect(canPlaceNode(api, 'f', 'b')).toBe(false)
+    expect(canPlaceNode(api, 'a', 'k')).toBe(false)
+    expect(canPlaceNode(api, 'a', 'nope')).toBe(false)
+    expect(placeNode(api, 'nope', { id: 'a', position: 'after' })).toBe(api)
   })
 })

@@ -1,28 +1,33 @@
 import { create } from 'zustand'
 import type { CategoryId } from '@shared/protocols/categories'
 
-export type UtilityView = 'environments' | 'history' | 'settings'
+export type UtilityView = 'environments' | 'settings'
 export type SidebarView = CategoryId | UtilityView
-export type Theme = 'dark' | 'light'
+/** What a delete confirmation shows, and what runs when it is confirmed. */
+export interface DeleteConfirmation {
+  title: string
+  message: string
+  onConfirm: () => void
+}
+
 export type DialogState =
-  { type: 'create-workspace' } | { type: 'new-request'; parentId: string | null; category: CategoryId } | null
+  | { type: 'create-workspace' }
+  | { type: 'new-request'; parentId: string | null; category: CategoryId }
+  | ({ type: 'confirm-delete' } & DeleteConfirmation)
+  | null
 
 interface UiState {
   view: SidebarView
-  theme: Theme
   dialog: DialogState
   setView: (view: SidebarView) => void
-  setTheme: (theme: Theme) => void
   openDialog: (dialog: Exclude<DialogState, null>) => void
   closeDialog: () => void
 }
 
 export const useUiStore = create<UiState>()((set) => ({
   view: 'api',
-  theme: 'dark',
   dialog: null,
   setView: (view) => set({ view }),
-  setTheme: (theme) => set({ theme }),
   openDialog: (dialog) => set({ dialog }),
   closeDialog: () => set({ dialog: null })
 }))

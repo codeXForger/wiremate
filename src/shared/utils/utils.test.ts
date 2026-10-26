@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { formatBytes, formatDuration } from './format'
 import { createId } from './id'
 import { createKeyValue, removeKeyValue, updateKeyValue } from './key-value'
+import { segmentAt, templateSegments } from './interpolate'
 
 describe('formatBytes', () => {
   it.each([
@@ -50,5 +51,26 @@ describe('key-value helpers', () => {
     expect(updated[0]!.value).toBe('x')
     expect(updated[1]).toBe(second)
     expect(removeKeyValue(rows, first!.id)).toEqual([second])
+  })
+})
+
+describe('templateSegments', () => {
+  it('splits text into plain runs and placeholders with their offsets', () => {
+    expect(templateSegments('{{base}}/users/{{ id }}?x=1')).toEqual([
+      { text: '{{base}}', start: 0, variable: 'base' },
+      { text: '/users/', start: 8 },
+      { text: '{{ id }}', start: 15, variable: 'id' },
+      { text: '?x=1', start: 23 }
+    ])
+    expect(templateSegments('plain')).toEqual([{ text: 'plain', start: 0 }])
+    expect(templateSegments('')).toEqual([])
+  })
+
+  it('finds the placeholder at an offset, edges included', () => {
+    const segments = templateSegments('a{{b}}c')
+    expect(segmentAt(segments, 1)?.variable).toBe('b')
+    expect(segmentAt(segments, 6)?.variable).toBe('b')
+    expect(segmentAt(segments, 0)).toBeUndefined()
+    expect(segmentAt(segments, 7)).toBeUndefined()
   })
 })

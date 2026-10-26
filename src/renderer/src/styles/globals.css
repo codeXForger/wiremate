@@ -29,6 +29,21 @@
   --wire-kafka: #5d6880;
   --wire-mqtt: #c94a63;
   --wire-mcp: #3f9c3a;
+
+  --method-get: #2f8f5b;
+  --method-post: #b07a12;
+  --method-put: #2f7fd6;
+  --method-patch: #7a52c7;
+  --method-delete: #c24141;
+  --method-head: #5e6678;
+  --method-options: #5e6678;
+
+  --variable-defined: #1f8a78;
+  --variable-missing: #c24141;
+
+  /* Run dashboard: response-time bars (one series, one hue) and skipped requests (de-emphasis gray). */
+  --chart-duration: #5875a0;
+  --chart-skipped: #8891a2;
 }
 
 .dark {
@@ -54,6 +69,20 @@
   --wire-kafka: #9aa5b8;
   --wire-mqtt: #ef6f86;
   --wire-mcp: #6fcf6a;
+
+  --method-get: #5cc48a;
+  --method-post: #e0b04a;
+  --method-put: #4f9cf0;
+  --method-patch: #a98af0;
+  --method-delete: #e06a6a;
+  --method-head: #8a93a8;
+  --method-options: #8a93a8;
+
+  --variable-defined: #3fbfa8;
+  --variable-missing: #ef6f6f;
+
+  --chart-duration: #7f9cc9;
+  --chart-skipped: #737b8f;
 }
 
 @theme inline {
@@ -119,4 +148,20 @@
 
 @utility no-drag {
   -webkit-app-region: no-drag;
+}
+
+/* {{variables}} in request fields: one colour when the active environment defines them, another when it does not. */
+.wm-variable-defined,
+.wm-variable-missing {
+  border-radius: 3px;
+}
+
+.wm-variable-defined {
+  color: var(--variable-defined);
+  background: color-mix(in srgb, var(--variable-defined) 16%, transparent);
+}
+
+.wm-variable-missing {
+  color: var(--variable-missing);
+  background: color-mix(in srgb, var(--variable-missing) 16%, transparent);
 }

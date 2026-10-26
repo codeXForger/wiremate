@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { CATEGORIES, CATEGORY_IDS } from '@shared/protocols/categories'
 import { useTabStore } from '@/stores/tab-store'
@@ -19,7 +19,7 @@ describe('App shell', () => {
     const labels = within(rail)
       .getAllByRole('button')
       .map((b) => b.textContent)
-    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Env', 'History', 'Settings'])
+    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Env', 'Settings'])
     expect(within(rail).getByRole('button', { name: 'API' })).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -42,8 +42,6 @@ describe('App shell', () => {
 
   it('switches to utility views', async () => {
     const { user } = await renderApp()
-    await goTo(user, 'History')
-    expect(screen.getByText(/newest first/)).toBeInTheDocument()
     await goTo(user, 'Settings')
     expect(screen.getByRole('button', { name: 'Sign in with GitHub' })).toBeDisabled()
   })
@@ -80,7 +78,7 @@ describe('App shell', () => {
     await user.type(screen.getByRole('textbox', { name: 'Request URL' }), '/x')
     expect(useTabStore.getState().dirtyIds).toHaveLength(1)
     fireEvent.keyDown(window, { key: 's', ctrlKey: true })
-    expect(useTabStore.getState().dirtyIds).toHaveLength(0)
+    await waitFor(() => expect(useTabStore.getState().dirtyIds).toHaveLength(0))
     fireEvent.keyDown(window, { key: 'w', metaKey: true })
     expect(useTabStore.getState().openIds).toHaveLength(0)
     fireEvent.keyDown(window, { key: 's', metaKey: true })

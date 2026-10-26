@@ -2,13 +2,11 @@ import type { ComponentType } from 'react'
 import { isCategoryId } from '@shared/protocols/categories'
 import { CategoryView } from '@/features/categories/CategoryView'
 import { EnvironmentsView } from '@/features/environments/EnvironmentsView'
-import { HistoryView } from '@/features/history/HistoryView'
 import { SettingsView } from '@/features/settings/SettingsView'
 import { useUiStore, type UtilityView } from '@/stores/ui-store'
 
 const UTILITY_VIEWS: Record<UtilityView, ComponentType> = {
   environments: EnvironmentsView,
-  history: HistoryView,
   settings: SettingsView
 }
 
