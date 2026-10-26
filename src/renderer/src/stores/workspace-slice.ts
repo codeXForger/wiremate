@@ -11,6 +11,7 @@ export function contentState(workspaceId: string, content: WorkspaceContent): Pa
   return {
     activeWorkspaceId: workspaceId,
     ...rest,
+    drafts: {},
     activeEnvironmentId: known ? settings.activeEnvironmentId : null,
     theme: settings.theme
   }

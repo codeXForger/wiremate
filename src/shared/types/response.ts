@@ -20,19 +20,27 @@ export interface ExchangeResponse {
   simulated: boolean
 }
 
-export type StreamDirection = 'in' | 'out' | 'system'
+export type StreamDirection = 'in' | 'out' | 'system' | 'error'
 
 export interface StreamEvent {
   id: string
   direction: StreamDirection
   at: number
   data: string
+  /** The other end, for traffic on a socket that talks to several (`host:port`). */
+  peer?: string
+  /** The raw bytes, when the event carried binary data; `data` holds them decoded as UTF-8. */
+  bytes?: Uint8Array
 }
 
 export interface StreamSession {
   kind: 'stream'
   connected: boolean
   events: StreamEvent[]
+  /** Opening, not yet connected or listening. */
+  connecting?: boolean
+  /** Who the session talks to: a server's clients, or the hosts a UDP socket heard from. */
+  peers?: string[]
 }
 
 export type ResponseState = ExchangeResponse | StreamSession

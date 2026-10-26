@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { AppEvent, IpcChannel, type WireMateApi } from '@shared/ipc'
+import type { SocketEvent } from '@shared/types/socket'
 
 type Method = keyof typeof IpcChannel
 
@@ -16,9 +17,16 @@ function onBeforeClose(finish: () => Promise<void>): void {
   })
 }
 
+function onSocketEvent(listener: (event: SocketEvent) => void): () => void {
+  const forward = (_event: unknown, socketEvent: SocketEvent): void => listener(socketEvent)
+  ipcRenderer.on(AppEvent.socketEvent, forward)
+  return () => ipcRenderer.off(AppEvent.socketEvent, forward)
+}
+
 const api = {
   platform: process.platform,
   onBeforeClose,
+  onSocketEvent,
   ...Object.fromEntries(METHODS.map((method) => [method, invoker(method)]))
 } as WireMateApi
 

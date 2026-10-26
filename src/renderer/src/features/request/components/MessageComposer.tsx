@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { SendHorizontal } from 'lucide-react'
 import { CodeEditor } from '@/components/CodeEditor'
 import { Button } from '@/components/ui/button'
@@ -8,15 +9,18 @@ interface MessageComposerProps extends BoundField {
   requestId: string
   label?: string
   language?: string
+  /** Replaces the default send bar, for protocols that send their own way. */
+  footer?: ReactNode
 }
 
-export function MessageComposer({ requestId, value, label = 'Message', language, onChange }: MessageComposerProps) {
+export function MessageComposer({ requestId, value, label = 'Message', footer, ...editor }: MessageComposerProps) {
+  const { language, onChange } = editor
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1">
         <CodeEditor ariaLabel={label} value={value} language={language} onChange={onChange} highlightVariables />
       </div>
-      <ComposerFooter requestId={requestId} label={label} value={value} />
+      {footer ?? <ComposerFooter requestId={requestId} label={label} value={value} />}
     </div>
   )
 }

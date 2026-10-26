@@ -5,13 +5,14 @@ interface OptionSelectProps<T extends string> {
   value: T
   options: readonly T[]
   className?: string
+  disabled?: boolean
   format?: (option: T) => string
   onChange: (value: T) => void
 }
 
 export function OptionSelect<T extends string>({ label, value, className, onChange, ...rest }: OptionSelectProps<T>) {
   return (
-    <Select value={value} onValueChange={(next) => onChange(next as T)}>
+    <Select value={value} disabled={rest.disabled} onValueChange={(next) => onChange(next as T)}>
       <SelectTrigger aria-label={label} className={className}>
         <SelectValue />
       </SelectTrigger>

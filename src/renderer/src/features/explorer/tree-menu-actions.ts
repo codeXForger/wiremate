@@ -1,4 +1,5 @@
 import { Copy, FilePlus, FolderPlus, Pencil, Trash2, type LucideIcon } from 'lucide-react'
+import { categoryTerms } from '@shared/protocols/categories'
 import type { TreeNode } from '@shared/types/workspace'
 import { duplicateAndOpen, startNewRequest } from '@/features/request/new-request'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -18,8 +19,9 @@ export function treeMenuActions(node: TreeNode, onRename: () => void): MenuActio
   const { addFolder } = useWorkspaceStore.getState()
   const duplicate: MenuAction[] =
     node.kind === 'request' ? [{ label: 'Duplicate', icon: Copy, onSelect: () => duplicateAndOpen(node.id) }] : []
+  const newItem = { label: `New ${categoryTerms(category).item}`, icon: FilePlus }
   return [
-    { label: 'New request', icon: FilePlus, onSelect: () => startNewRequest(parentId, category) },
+    { ...newItem, onSelect: () => startNewRequest(parentId, category) },
     { label: 'New folder', icon: FolderPlus, onSelect: () => void addFolder(parentId, category) },
     ...duplicate,
     { label: 'Rename', icon: Pencil, onSelect: onRename },

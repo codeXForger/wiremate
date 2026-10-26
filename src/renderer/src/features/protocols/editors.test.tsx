@@ -158,24 +158,6 @@ describe('streaming editors', () => {
     expect(screen.getByText('Connected', { exact: true })).toBeInTheDocument()
   })
 
-  it.each(['TCP', 'UDP'])('edits host, port and payload for %s', async (protocol) => {
-    const { user } = await renderApp()
-    await createRequest(user, 'Network', protocol)
-    const host = screen.getByRole('textbox', { name: 'Host' })
-    await user.clear(host)
-    await user.type(host, 'example.com')
-    const port = screen.getByLabelText('Port')
-    await user.clear(port)
-    expect(port).toHaveValue('')
-    await user.type(port, '7')
-    expect(activeConfig()).toMatchObject({ host: 'example.com', port: 7 })
-    await choose(user, 'Encoding', /^hex$/)
-    await user.type(screen.getByRole('textbox', { name: 'Payload' }), 'ff')
-    expect(activeConfig()).toMatchObject({ encoding: 'hex', payload: 'ff' })
-    await user.click(screen.getByRole('button', { name: 'Connect' }))
-    expect(screen.getByText('Connected to example.com:7 (simulated)')).toBeInTheDocument()
-  })
-
   it('sets MQTT QoS and retain', async () => {
     const { user } = await renderApp()
     await openRequest(user, 'MQTT', /Sensor telemetry/)

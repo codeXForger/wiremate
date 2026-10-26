@@ -11,33 +11,48 @@ app.on('before-quit', () => {
   quitting = true
 })
 
+/** Decides whether a window may close, e.g. by asking the user; resolves to false to keep it open. */
+export type CloseGuard = (window: BrowserWindow) => Promise<boolean>
+
+const allowClose: CloseGuard = () => Promise.resolve(true)
+
 export class WindowFactory {
   private static readonly MIN_SIZE = { width: 960, height: 600 }
 
-  public static create(): BrowserWindow {
+  public static create(guard: CloseGuard = allowClose): BrowserWindow {
     const window = new BrowserWindow(WindowFactory.options())
     window.on('ready-to-show', () => window.show())
     window.webContents.setWindowOpenHandler(({ url }) => {
       void shell.openExternal(url)
       return { action: 'deny' }
     })
-    WindowFactory.saveBeforeClosing(window)
+    WindowFactory.guardClose(window, guard)
     WindowFactory.load(window)
     return window
   }
 
-  /** Holds the window open until the renderer has written its pending saves (or the grace period ends). */
-  private static saveBeforeClosing(window: BrowserWindow): void {
-    let closing = false
+  /** Asks the guard first; a refusal keeps the window open and cancels a quit in progress. */
+  private static guardClose(window: BrowserWindow, guard: CloseGuard): void {
+    let state: 'open' | 'asking' | 'closing' = 'open'
     window.on('close', (event) => {
-      if (closing) return
-      closing = true
+      if (state === 'closing') return
       event.preventDefault()
-      const close = (): void => WindowFactory.closeNow(window)
-      ipcMain.once(AppEvent.readyToClose, close)
-      setTimeout(close, CLOSE_GRACE_MS)
-      window.webContents.send(AppEvent.beforeClose)
+      if (state === 'asking') return
+      state = 'asking'
+      void guard(window).then((agreed) => {
+        state = agreed ? 'closing' : 'open'
+        if (agreed) WindowFactory.saveThenClose(window)
+        else quitting = false
+      })
     })
+  }
+
+  /** Holds the window open until the renderer has written its pending saves (or the grace period ends). */
+  private static saveThenClose(window: BrowserWindow): void {
+    const close = (): void => WindowFactory.closeNow(window)
+    ipcMain.once(AppEvent.readyToClose, close)
+    setTimeout(close, CLOSE_GRACE_MS)
+    window.webContents.send(AppEvent.beforeClose)
   }
 
   private static closeNow(window: BrowserWindow): void {

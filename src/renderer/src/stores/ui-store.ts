@@ -8,12 +8,18 @@ export interface DeleteConfirmation {
   title: string
   message: string
   onConfirm: () => void
+  /** The confirm button; "Delete" by default. */
+  confirmLabel?: string
+  /** Follows the message; "This cannot be undone." by default. */
+  note?: string
 }
 
 export type DialogState =
   | { type: 'create-workspace' }
   | { type: 'new-request'; parentId: string | null; category: CategoryId }
   | ({ type: 'confirm-delete' } & DeleteConfirmation)
+  | { type: 'load-message'; requestId: string }
+  | { type: 'save-message'; requestId: string }
   | null
 
 interface UiState {

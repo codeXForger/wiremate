@@ -5,9 +5,11 @@ import { demoSeed } from './seed'
 import { useConsoleStore } from '@/stores/console-store'
 import { useResponseStore } from '@/stores/response-store'
 import { services } from '@/services'
+import { MemoryMessageRepository } from '@/services/message-repository'
 import { MemorySuiteRepository } from '@/services/suite-repository'
 import { MemoryWorkspaceRepository } from '@/services/workspace-repository'
 import { useSessionVariables } from '@/stores/session-variables'
+import { useMessageStore } from '@/stores/message-store'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useToastStore } from '@/stores/toast-store'
 import { saveQueue } from '@/stores/workspace-persistence'
@@ -29,11 +31,13 @@ export function resetStores({ keepStorage = false } = {}): void {
   useConsoleStore.setState(useConsoleStore.getInitialState(), true)
   useSessionVariables.setState(useSessionVariables.getInitialState(), true)
   useSuiteStore.setState(useSuiteStore.getInitialState(), true)
+  useMessageStore.setState(useMessageStore.getInitialState(), true)
   useToastStore.setState(useToastStore.getInitialState(), true)
   saveQueue.clear()
   saveQueue.delayMs = TEST_SAVE_DELAY_MS
   if (keepStorage) return
   services.suites = new MemorySuiteRepository()
+  services.messages = new MemoryMessageRepository()
   services.workspaces = new MemoryWorkspaceRepository([demoSeed()])
 }
 
@@ -56,15 +60,15 @@ export async function openRequest(user: User, section: string, name: RegExp) {
   return screen.getByRole('region', { name: /request$/ })
 }
 
-/** Uses the section's own menu ("New HTTP request", "New Kafka request"…). */
+/** Uses the section's own menu ("New HTTP request", "New TCP connection"…). */
 export async function createRequest(user: User, section: string, protocol: string) {
   await goTo(user, section)
-  await user.click(screen.getByRole('button', { name: `New ${protocol} request` }))
+  await user.click(screen.getByRole('button', { name: new RegExp(`^New ${protocol} (request|connection)$`) }))
   return screen.getByRole('region', { name: /request$/ })
 }
 
-/** Answers the delete confirmation: "Delete" by default, or "Cancel". Returns the dialog's text. */
-export async function answerDeleteDialog(user: User, answer: 'Delete' | 'Cancel' = 'Delete') {
+/** Answers a confirmation: "Delete" by default, "Cancel", or its own confirm label. Returns the dialog's text. */
+export async function answerDeleteDialog(user: User, answer: string = 'Delete') {
   const dialog = await screen.findByRole('alertdialog')
   const text = dialog.textContent
   await user.click(within(dialog).getByRole('button', { name: answer }))

@@ -4,10 +4,14 @@ import { app, BrowserWindow } from 'electron'
 import { DialogController } from './dialog-controller'
 import { HistoryFileStore } from './history/history-file-store'
 import { HttpClient } from './http/http-client'
+import { MessageFileStore } from './messages/message-file-store'
 import { ReportController } from './reports/report-controller'
 import { RequestController } from './request-controller'
 import { ScriptRunner } from './scripting/script-runner'
 import scriptWorkerPath from './scripting/script-worker?modulePath'
+import { SocketCloseGuard } from './sockets/socket-close-guard'
+import { SocketController } from './sockets/socket-controller'
+import { SocketManager } from './sockets/socket-manager'
 import { SuiteFileStore } from './suites/suite-file-store'
 import { WindowFactory } from './window-factory'
 import { WorkspaceController } from './workspace-controller'
@@ -22,6 +26,8 @@ function storageLocations(): { home: string; appData: string } {
   return { home: homedir(), appData: app.getPath('userData') }
 }
 
+const sockets = new SocketManager()
+
 function registerControllers(): void {
   const { home, appData } = storageLocations()
   const registry = new WorkspaceRegistry(join(appData, 'workspaces.json'))
@@ -31,17 +37,25 @@ function registerControllers(): void {
     http: new HttpClient(),
     scripts: new ScriptRunner({ workerPath: scriptWorkerPath })
   }).register()
-  new WorkspaceController(workspaces, new SuiteFileStore(), new HistoryFileStore()).register()
+  const stores = { suites: new SuiteFileStore(), history: new HistoryFileStore(), messages: new MessageFileStore() }
+  new WorkspaceController(workspaces, stores).register()
   new ReportController().register()
+  new SocketController(sockets).register()
 }
+
+const closeGuard = new SocketCloseGuard(sockets)
+const createWindow = (): BrowserWindow => WindowFactory.create((window) => closeGuard.confirm(window))
 
 function bootstrap(): void {
   registerControllers()
-  WindowFactory.create()
+  createWindow()
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) WindowFactory.create()
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 }
+
+/** The windows asked before closing; whatever is still open (a crashed window's sockets) closes on the way out. */
+app.on('will-quit', () => sockets.closeAll())
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

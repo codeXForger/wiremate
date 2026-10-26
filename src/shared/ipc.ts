@@ -1,8 +1,10 @@
 import type { CategoryId } from './protocols/categories'
 import type { HistoryEntry } from './types/history'
+import type { SavedMessage } from './types/message'
 import type { HttpResult, WireRequest } from './types/http'
 import type { AnyRequest } from './types/protocol'
 import type { ScriptOutcome, ScriptRun } from './types/scripting'
+import type { SocketEvent, SocketSpec } from './types/socket'
 import type { SuiteRun, TestSuite } from './types/suite'
 import type {
   CreateWorkspaceInput,
@@ -36,13 +38,21 @@ export const IpcChannel = {
   addHistory: 'history:add',
   clearHistory: 'history:clear',
   chooseReportFile: 'report:choose-file',
-  savePdfReport: 'report:save-pdf'
+  savePdfReport: 'report:save-pdf',
+  openSocket: 'socket:open',
+  sendSocket: 'socket:send',
+  closeSocket: 'socket:close',
+  listMessages: 'messages:list',
+  saveMessage: 'messages:save',
+  deleteMessage: 'messages:delete'
 } as const
 
 /** One-way messages around closing a window: main asks, the renderer saves what is pending, then answers. */
 export const AppEvent = {
   beforeClose: 'app:before-close',
-  readyToClose: 'app:ready-to-close'
+  readyToClose: 'app:ready-to-close',
+  /** Main pushes everything that happens on an open socket. */
+  socketEvent: 'socket:event'
 } as const
 
 /**
@@ -69,6 +79,13 @@ export interface HistoryStorageApi {
   clearHistory(workspaceId: string, category: CategoryId): Promise<void>
 }
 
+/** Saved socket payloads, kept per workspace, in list order. */
+export interface MessageStorageApi {
+  listMessages(workspaceId: string): Promise<SavedMessage[]>
+  saveMessage(workspaceId: string, message: SavedMessage): Promise<void>
+  deleteMessage(workspaceId: string, messageId: string): Promise<void>
+}
+
 export interface SuiteStorageApi {
   listSuites(workspaceId: string): Promise<TestSuite[]>
   saveSuite(workspaceId: string, suite: TestSuite): Promise<void>
@@ -77,7 +94,21 @@ export interface SuiteStorageApi {
   saveRun(workspaceId: string, run: SuiteRun): Promise<void>
 }
 
-export interface WireMateApi extends WorkspaceStorageApi, SuiteStorageApi, HistoryStorageApi {
+/**
+ * Real TCP and UDP sockets, owned by the main process. A session is opened under an id the renderer picks; what
+ * happens on it (connected, data in and out, errors, closed) arrives through `onSocketEvent`.
+ */
+export interface SocketApi {
+  openSocket(sessionId: string, spec: SocketSpec): Promise<void>
+  /** `to` (`host:port`) picks one client of a server or a UDP destination; without it a server sends to all. */
+  sendSocket(sessionId: string, bytes: Uint8Array, to?: string): Promise<void>
+  closeSocket(sessionId: string): Promise<void>
+  /** Returns a function that stops listening. */
+  onSocketEvent(listener: (event: SocketEvent) => void): () => void
+}
+
+export interface WireMateApi
+  extends WorkspaceStorageApi, SuiteStorageApi, HistoryStorageApi, MessageStorageApi, SocketApi {
   readonly platform: string
   selectFolder(): Promise<string | null>
   /** `transferId` names the request so `cancelHttp` can abort it. */

@@ -1,4 +1,4 @@
-import { CATEGORIES, type CategoryId } from '@shared/protocols/categories'
+import { CATEGORIES, categoryTerms, type CategoryId } from '@shared/protocols/categories'
 import type { ProtocolId } from '@shared/types/protocol'
 import { wireColor } from '@/components/wire'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
@@ -20,7 +20,7 @@ export function NewRequestDialog({ parentId, category, onClose }: NewRequestDial
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent>
-        <DialogTitle>New {CATEGORIES[category].label} request</DialogTitle>
+        <DialogTitle>{`New ${CATEGORIES[category].label} ${categoryTerms(category).item}`}</DialogTitle>
         <DialogDescription>Pick what you want to talk to.</DialogDescription>
         <ProtocolGrid category={category} onPick={create} />
       </DialogContent>

@@ -1,5 +1,6 @@
 import { wireColor } from '@/components/wire'
 import { protocolRegistry } from '../protocols/registry'
+import { DraftBar } from './DraftBar'
 import { useRequest } from './use-request'
 
 export function RequestPane({ requestId }: { requestId: string }) {
@@ -12,6 +13,7 @@ export function RequestPane({ requestId }: { requestId: string }) {
       className="flex h-full flex-col border-t-2"
       style={{ borderTopColor: wireColor(request.protocol) }}
     >
+      <DraftBar requestId={requestId} />
       <Editor requestId={requestId} />
     </section>
   )
