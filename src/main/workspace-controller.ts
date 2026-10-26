@@ -1,6 +1,13 @@
 import { ipcMain } from 'electron'
-import { IpcChannel, type HistoryStorageApi, type SuiteStorageApi, type WorkspaceStorageApi } from '@shared/ipc'
+import {
+  IpcChannel,
+  type HistoryStorageApi,
+  type MessageStorageApi,
+  type SuiteStorageApi,
+  type WorkspaceStorageApi
+} from '@shared/ipc'
 import type { HistoryFileStore } from './history/history-file-store'
+import type { MessageFileStore } from './messages/message-file-store'
 import type { SuiteFileStore } from './suites/suite-file-store'
 import type { WorkspaceService } from './workspaces/workspace-service'
 
@@ -8,13 +15,22 @@ type Handlers = { [K in keyof WorkspaceStorageApi & keyof typeof IpcChannel]: Wo
 type HistoryHandlers = { [K in keyof HistoryStorageApi & keyof typeof IpcChannel]: HistoryStorageApi[K] }
 type Invoke = (...args: unknown[]) => Promise<unknown>
 type SuiteHandlers = { [K in keyof SuiteStorageApi & keyof typeof IpcChannel]: SuiteStorageApi[K] }
+type MessageHandlers = { [K in keyof MessageStorageApi & keyof typeof IpcChannel]: MessageStorageApi[K] }
 
-/** Exposes workspace storage (collections, requests, environments, settings, suites, runs) to the renderer. */
+interface WorkspaceStores {
+  suites: SuiteFileStore
+  history: HistoryFileStore
+  messages: MessageFileStore
+}
+
+/**
+ * Exposes workspace storage (collections, requests, environments, settings, suites, runs, history, messages) to the
+ * renderer.
+ */
 export class WorkspaceController {
   public constructor(
     private readonly workspaces: WorkspaceService,
-    private readonly suites: SuiteFileStore,
-    private readonly history: HistoryFileStore
+    private readonly stores: WorkspaceStores
   ) {}
 
   public register(): void {
@@ -22,7 +38,8 @@ export class WorkspaceController {
     const handlers = {
       ...this.workspaceHandlers(),
       ...this.suiteHandlers(),
-      ...this.historyHandlers()
+      ...this.historyHandlers(),
+      ...this.messageHandlers()
     } as unknown as Record<string, Invoke>
     for (const [method, handler] of Object.entries(handlers)) {
       ipcMain.handle(IpcChannel[method as keyof typeof IpcChannel], (_event, ...args: unknown[]) => handler(...args))
@@ -47,7 +64,7 @@ export class WorkspaceController {
   /** Suites live in the workspace folder too; the id is resolved to the folder here. */
   private suiteHandlers(): SuiteHandlers {
     const root = (id: string): Promise<string> => this.workspaces.pathOf(id)
-    const store = this.suites
+    const store = this.stores.suites
     return {
       listSuites: async (id) => store.listSuites(await root(id)),
       saveSuite: async (id, suite) => store.saveSuite(await root(id), suite),
@@ -59,11 +76,21 @@ export class WorkspaceController {
 
   private historyHandlers(): HistoryHandlers {
     const root = (id: string): Promise<string> => this.workspaces.pathOf(id)
-    const store = this.history
+    const store = this.stores.history
     return {
       listHistory: async (id, category) => store.list(await root(id), category),
       addHistory: async (id, entry) => store.add(await root(id), entry),
       clearHistory: async (id, category) => store.clear(await root(id), category)
+    }
+  }
+
+  private messageHandlers(): MessageHandlers {
+    const root = (id: string): Promise<string> => this.workspaces.pathOf(id)
+    const store = this.stores.messages
+    return {
+      listMessages: async (id) => store.list(await root(id)),
+      saveMessage: async (id, message) => store.save(await root(id), message),
+      deleteMessage: async (id, messageId) => store.delete(await root(id), messageId)
     }
   }
 }

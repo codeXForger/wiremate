@@ -11,7 +11,9 @@ export function StatusBar() {
     <footer className="flex h-6 shrink-0 items-center gap-4 border-t bg-panel px-3 text-[11px] text-muted-foreground">
       <span className="truncate font-mono">{workspace?.path ?? 'No workspace open'}</span>
       <span>{requestCount} requests</span>
-      <span className="ml-auto">HTTP is live; other protocols are simulated until their clients land</span>
+      <span className="ml-auto">
+        HTTP, TCP and UDP are live; other protocols are simulated until their clients land
+      </span>
       <ConsoleToggle />
     </footer>
   )

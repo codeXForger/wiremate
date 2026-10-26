@@ -34,8 +34,11 @@ const byId = (environments: Environment[]): Record<string, Environment> =>
 
 type Change = { workspaceId: string; state: WorkspaceState; previous: WorkspaceState }
 
+/** Drafts are not saved: they reach the folder when they join the tree. */
 function saveRequests({ workspaceId, state, previous }: Change): void {
-  const { changed, removed } = diffById<AnyRequest>(previous.requests, state.requests)
+  const diff = diffById<AnyRequest>(previous.requests, state.requests)
+  const changed = diff.changed.filter((request) => !(request.id in state.drafts))
+  const removed = diff.removed.filter((id) => !(id in previous.drafts))
   changed.forEach((request) => {
     const key = `${workspaceId}:request:${request.id}`
     saveQueue.schedule(key, async () => {

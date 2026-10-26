@@ -1,22 +1,28 @@
 import { useEffect } from 'react'
 import { currentCategory, duplicateAndOpen, startNewRequest } from '@/features/request/new-request'
+import { requestCloseTab } from '@/features/tabs/close-tab'
 import { useConsoleStore } from '@/stores/console-store'
 import { useTabStore } from '@/stores/tab-store'
 import { saveQueue } from '@/stores/workspace-persistence'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 type ShortcutHandler = () => void
 
 const SHORTCUTS: Record<string, ShortcutHandler> = {
   n: () => startNewRequest(null, currentCategory()),
-  s: () => void saveQueue.flush(),
+  s: () => {
+    const { activeId } = useTabStore.getState()
+    if (activeId) useWorkspaceStore.getState().saveDraft(activeId, '')
+    void saveQueue.flush()
+  },
   '`': () => useConsoleStore.getState().toggle(),
   d: () => {
     const { activeId } = useTabStore.getState()
     if (activeId) duplicateAndOpen(activeId)
   },
   w: () => {
-    const { activeId, close } = useTabStore.getState()
-    if (activeId) close(activeId)
+    const { activeId } = useTabStore.getState()
+    if (activeId) requestCloseTab(activeId)
   }
 }
 

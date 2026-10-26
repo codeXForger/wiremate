@@ -21,7 +21,8 @@ import { McpEditor } from './mcp/McpEditor'
 import { MqttEditor } from './mqtt/mqtt-editor'
 import { RabbitMqEditor } from './rabbitmq/rabbitmq-editor'
 import { protocolRegistry } from './registry'
-import { SocketEditor } from './socket/SocketEditor'
+import { TcpEditor } from './socket/TcpEditor'
+import { UdpEditor } from './socket/UdpEditor'
 import { SocketIoEditor } from './socketio/socketio-editor'
 import type { EditorProps } from './types'
 import { WebSocketEditor } from './websocket/WebSocketEditor'
@@ -31,8 +32,8 @@ const PLUGINS: Record<ProtocolId, { icon: LucideIcon; Editor: ComponentType<Edit
   graphql: { icon: Waypoints, Editor: GraphqlEditor },
   websocket: { icon: ArrowLeftRight, Editor: WebSocketEditor },
   socketio: { icon: Radio, Editor: SocketIoEditor },
-  tcp: { icon: Plug, Editor: SocketEditor },
-  udp: { icon: Send, Editor: SocketEditor },
+  tcp: { icon: Plug, Editor: TcpEditor },
+  udp: { icon: Send, Editor: UdpEditor },
   rabbitmq: { icon: Rabbit, Editor: RabbitMqEditor },
   kafka: { icon: Layers, Editor: KafkaEditor },
   mqtt: { icon: RadioTower, Editor: MqttEditor },

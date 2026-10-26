@@ -1,15 +1,59 @@
-import type { ProtocolConfigMap, ProtocolId, SocketConfig } from '../types/protocol'
+import type {
+  ProtocolConfigMap,
+  ProtocolId,
+  SocketPayload,
+  TcpConfig,
+  TcpOptions,
+  UdpConfig,
+  UdpOptions
+} from '../types/protocol'
 import { createKeyValue } from '../utils/key-value'
 
 type DefaultBuilders = { [P in ProtocolId]: () => ProtocolConfigMap[P] }
 
 const JSON_CONTENT_TYPE = 'application/json'
 
-const socketDefaults = (port: number): SocketConfig => ({
-  host: '127.0.0.1',
-  port,
-  payload: '',
-  encoding: 'text'
+const LOCALHOST = '127.0.0.1'
+
+const payloadDefaults = (): SocketPayload => ({ payload: '', encoding: 'text', lineEnding: 'none' })
+
+const tcpOptions = (): TcpOptions => ({
+  noDelay: true,
+  keepAlive: false,
+  keepAliveDelayMs: 60_000,
+  idleTimeoutMs: 0,
+  connectTimeoutMs: 10_000,
+  bufferSize: 65_536,
+  maxConnections: 0
+})
+
+const tcpDefaults = (): TcpConfig => ({
+  mode: 'client',
+  host: LOCALHOST,
+  port: 9000,
+  ...payloadDefaults(),
+  options: tcpOptions()
+})
+
+const udpOptions = (): UdpOptions => ({
+  ipv6: false,
+  reuseAddr: true,
+  ttl: 64,
+  multicastLoopback: true,
+  multicastInterface: '',
+  recvBufferSize: 0,
+  sendBufferSize: 0
+})
+
+const udpDefaults = (): UdpConfig => ({
+  mode: 'unicast',
+  localAddress: '0.0.0.0',
+  localPort: 9001,
+  host: LOCALHOST,
+  port: 9001,
+  group: '239.255.0.1',
+  ...payloadDefaults(),
+  options: udpOptions()
 })
 
 export const PROTOCOL_DEFAULTS: DefaultBuilders = {
@@ -35,8 +79,8 @@ export const PROTOCOL_DEFAULTS: DefaultBuilders = {
     event: 'message',
     message: ''
   }),
-  tcp: () => socketDefaults(9000),
-  udp: () => socketDefaults(9001),
+  tcp: tcpDefaults,
+  udp: udpDefaults,
   rabbitmq: () => ({
     url: 'amqp://guest:guest@localhost:5672',
     exchange: 'amq.direct',

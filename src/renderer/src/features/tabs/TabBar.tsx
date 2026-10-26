@@ -1,5 +1,5 @@
 import { useState, type MouseEvent, type ReactNode } from 'react'
-import { FlaskConical, History, Variable, X } from 'lucide-react'
+import { FlaskConical, History, MessageSquareText, Variable, X } from 'lucide-react'
 import type { AnyRequest } from '@shared/types/protocol'
 import type { TestSuite } from '@shared/types/suite'
 import type { Environment } from '@shared/types/workspace'
@@ -9,13 +9,16 @@ import { RequestBadge } from '@/components/RequestBadge'
 import { RenameInput, type Renameable } from '@/components/RenameInput'
 import { wireColor } from '@/components/wire'
 import { cn } from '@/lib/utils'
+import { useMessageStore } from '@/stores/message-store'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useTabStore } from '@/stores/tab-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useRequest } from '../request/use-request'
 import { renameEnvironment } from '../environments/environment-actions'
 import { historyCategoryOf, historyTitle } from '../history/history-entry'
+import { renameMessage } from '../messages/message-actions'
 import { renameSuite } from '../suites/suite-actions'
+import { requestCloseTab } from './close-tab'
 import { tabKind, type TabKind } from './tab-kind'
 
 export function TabBar() {
@@ -114,11 +117,18 @@ function HistoryTab({ id }: { id: string }) {
   )
 }
 
+function MessageTab({ id }: { id: string }) {
+  const message = useMessageStore((state) => state.messages.find((candidate) => candidate.id === id))
+  const icon = <MessageSquareText className="size-3 shrink-0 text-muted-foreground" />
+  return message ? <TabShell target={message} accent="var(--wire-tcp)" icon={icon} onRename={renameMessage} /> : null
+}
+
 const TABS: Record<TabKind, (props: { id: string }) => ReactNode> = {
   request: RequestTab,
   suite: SuiteTab,
   environment: EnvironmentTab,
-  history: HistoryTab
+  history: HistoryTab,
+  message: MessageTab
 }
 
 const CLOSE_CLASS = 'ml-1 flex size-5 shrink-0 items-center justify-center rounded hover:bg-surface'
@@ -127,7 +137,7 @@ function CloseTabButton({ target }: { target: Renameable }) {
   const dirty = useTabStore((state) => state.dirtyIds.includes(target.id))
   const close = (event: MouseEvent): void => {
     event.stopPropagation()
-    useTabStore.getState().close(target.id)
+    requestCloseTab(target.id)
   }
   return (
     <button type="button" aria-label={`Close ${target.name}`} onClick={close} className={CLOSE_CLASS}>

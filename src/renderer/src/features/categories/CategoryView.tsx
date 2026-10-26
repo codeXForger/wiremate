@@ -1,5 +1,5 @@
 import { FolderPlus } from 'lucide-react'
-import { CATEGORIES, type CategoryId } from '@shared/protocols/categories'
+import { CATEGORIES, categoryTerms, type CategoryId } from '@shared/protocols/categories'
 import { Column } from '@/components/Column'
 import { Hint } from '@/components/Hint'
 import { IconButton } from '@/components/IconButton'
@@ -47,23 +47,30 @@ function CategoryHeader({ category }: CategoryViewProps) {
 
 function Collections({ category }: CategoryViewProps) {
   const addCollection = (): void => void useWorkspaceStore.getState().addFolder(null, category)
+  const terms = categoryTerms(category)
   return (
     <>
-      <SidebarHeader title="Collections">
-        <IconButton label="New collection" icon={FolderPlus} onClick={addCollection} />
+      <SidebarHeader title={terms.list}>
+        <IconButton label={`New ${terms.group}`} icon={FolderPlus} onClick={addCollection} />
       </SidebarHeader>
       <CollectionTree category={category} />
     </>
   )
 }
 
+function emptyHint(category: CategoryId): string {
+  const { item, list, saveExplicitly } = categoryTerms(category)
+  if (saveExplicitly) return `No ${list.toLowerCase()} yet. Start a new ${item} above, then save it to keep it here.`
+  return 'No collections yet. Create one to group related requests.'
+}
+
 function CollectionTree({ category }: CategoryViewProps) {
   const isEmpty = useWorkspaceStore((state) => childrenOf(state.nodes, null, category).length === 0)
-  const label = `${CATEGORIES[category].label} collections`
+  const label = `${CATEGORIES[category].label} ${categoryTerms(category).list.toLowerCase()}`
   const className = cn('min-h-0 flex-1 overflow-auto py-1', useDropIndicator(null) !== null && 'bg-primary/5')
   return (
     <div role="tree" aria-label={label} className={className} {...rootDropProps()}>
-      {isEmpty ? <Hint>No collections yet. Create one to group related requests.</Hint> : null}
+      {isEmpty ? <Hint>{emptyHint(category)}</Hint> : null}
       {!isEmpty && <TreeList parentId={null} depth={0} category={category} />}
     </div>
   )

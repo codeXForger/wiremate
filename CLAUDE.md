@@ -24,7 +24,8 @@ violation of the coding rules is reported straight back, so fix it before moving
 
 ## Layout
 
-- `src/main`: Electron main process (window, IPC controllers). `http/` sends HTTP with fetch, `scripting/` runs
+- `src/main`: Electron main process (window, IPC controllers). `http/` sends HTTP with fetch, `sockets/` owns real
+  TCP clients/servers and UDP sockets (events pushed to the renderer on `socket:event`), `scripting/` runs
   request scripts in a worker thread (`node:vm`), `workspaces/` and `suites/` read and write the workspace folder
   (layout in `src/shared/workspace/workspace-files.ts`). The renderer names workspaces by id only.
 - `src/preload`: typed `window.wiremate` bridge (`WireMateApi` in `src/shared/ipc.ts`)
@@ -55,8 +56,11 @@ Tabs hold requests, test suites, environments and histories, told apart by id pr
 The left rail lists **sections** (`src/shared/protocols/categories.ts`): API, GraphQL, Realtime, MCP, MQTT, Kafka,
 Pub/Sub and Network, with Env and Settings at the bottom. Selecting a section opens its own pane: a header, a menu with one
 "New … request" entry per protocol, and that section's collections. A collection (folder) stores its `category`;
-requests take theirs from their protocol. To add a protocol to a section, list it in `CATEGORIES`. A section can show extra panes below its collections
-(`features/categories/category-sections.ts`): API shows its request history and test suites there.
+requests take theirs from their protocol. To add a protocol to a section, list it in `CATEGORIES`. A section's `terms` name its items (Network: "connection", listed
+under "Connections") and can make new items drafts (`drafts` in the workspace store) that join the list, and the
+folder, only once saved. A section can show extra panes below its collections
+(`features/categories/category-sections.ts`): API shows its request history and test suites there; Network shows
+saved messages (`features/messages/`, `messages/<id>.json` in the workspace), which any TCP or UDP request can load.
 
 ## Conventions
 
@@ -64,8 +68,10 @@ requests take theirs from their protocol. To add a protocol to a section, list i
 - Bind config fields with `useFieldBinder` / `useConfigBinder`. They return `{ value, onChange }` to spread into inputs.
 - Use `Column`, `Hint`, `IconButton`, `PanelTabs`, `CodePane` and `SidebarHeader` before writing new layout markup.
 - Each protocol has a "wire" colour (`--wire-<id>` in `globals.css`). Use `wireColor()`, never hard-coded hex.
-- HTTP goes over the network through `RequestPipeline`. Other protocols are simulated (`SimulatedRunner`) until their
-  feature branch adds a real client.
+- HTTP goes over the network through `RequestPipeline`. TCP and UDP open real sockets through `SocketService`
+  (`features/protocols/socket/socket-actions.ts`), one session per request. Other protocols are simulated
+  (`SimulatedRunner`) until their feature branch adds a real client.
+- In tests, `installSocketNetwork()` (`src/renderer/test/socket-network.ts`) fakes the main process's sockets in memory.
 - In tests, Monaco and react-resizable-panels are replaced by stubs (`src/renderer/test/`). Use `renderApp()` from
   `src/renderer/test/render-app.tsx` for integration tests (it opens the demo fixture from `src/renderer/test/seed.ts`;
   the app itself has no demo data), and `installBridge()` from

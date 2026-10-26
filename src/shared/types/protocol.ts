@@ -64,11 +64,73 @@ export interface SocketIoConfig {
   message: string
 }
 
-export interface SocketConfig {
-  host: string
-  port: number
+export const LINE_ENDINGS = ['none', 'lf', 'crlf'] as const
+export type LineEnding = (typeof LINE_ENDINGS)[number]
+
+/** The message a socket sends: the text typed, how to turn it into bytes, and what to append to text. */
+export interface SocketPayload {
   payload: string
   encoding: PayloadEncoding
+  lineEnding: LineEnding
+}
+
+export const TCP_MODES = ['client', 'server'] as const
+export type TcpMode = (typeof TCP_MODES)[number]
+
+export interface TcpOptions {
+  /** Disables Nagle's algorithm, so small writes go out at once. */
+  noDelay: boolean
+  keepAlive: boolean
+  keepAliveDelayMs: number
+  /** Closes a connection after this long without traffic; 0 never does. */
+  idleTimeoutMs: number
+  /** A client gives up connecting after this long; 0 waits for the system. */
+  connectTimeoutMs: number
+  /** The most bytes shown as one received message; larger reads are split. */
+  bufferSize: number
+  /** The most clients a server accepts at once; 0 is no limit. */
+  maxConnections: number
+}
+
+export interface TcpConfig extends SocketPayload {
+  mode: TcpMode
+  /** A client connects to this address; a server listens on it. */
+  host: string
+  port: number
+  options: TcpOptions
+}
+
+export const UDP_MODES = ['unicast', 'broadcast', 'multicast'] as const
+export type UdpMode = (typeof UDP_MODES)[number]
+
+export interface UdpOptions {
+  ipv6: boolean
+  /** Lets several sockets bind the same port, e.g. two listeners of one multicast group. */
+  reuseAddr: boolean
+  ttl: number
+  /** Multicast: also receive what this socket sends to the group. */
+  multicastLoopback: boolean
+  /** Multicast: the local interface address to join and send on; empty lets the system choose. */
+  multicastInterface: string
+  /** SO_RCVBUF in bytes; 0 keeps the system default. */
+  recvBufferSize: number
+  /** SO_SNDBUF in bytes; 0 keeps the system default. */
+  sendBufferSize: number
+}
+
+export interface UdpConfig extends SocketPayload {
+  mode: UdpMode
+  /** Where the socket listens. Multicast listens on every interface, on the group port. */
+  localAddress: string
+  /** 0 lets the system pick a port. */
+  localPort: number
+  /** Where datagrams go: a host, or the broadcast address. */
+  host: string
+  /** The destination port; in multicast mode, the group port. */
+  port: number
+  /** Multicast group address to join and send to. */
+  group: string
+  options: UdpOptions
 }
 
 export interface RabbitMqConfig {
@@ -114,8 +176,8 @@ export interface ProtocolConfigMap {
   graphql: GraphqlConfig
   websocket: WebSocketConfig
   socketio: SocketIoConfig
-  tcp: SocketConfig
-  udp: SocketConfig
+  tcp: TcpConfig
+  udp: UdpConfig
   rabbitmq: RabbitMqConfig
   kafka: KafkaConfig
   mqtt: MqttConfig

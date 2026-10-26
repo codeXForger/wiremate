@@ -4,6 +4,7 @@ import { ConsolePanel } from '@/features/console/ConsolePanel'
 import { EnvironmentEditor } from '@/features/environments/EnvironmentEditor'
 import { historyCategoryOf } from '@/features/history/history-entry'
 import { HistoryPage } from '@/features/history/HistoryPage'
+import { MessageEditor } from '@/features/messages/MessageEditor'
 import { RequestWorkbench } from '@/features/request/RequestWorkbench'
 import { SuiteEditor } from '@/features/suites/SuiteEditor'
 import { tabKind, type TabKind } from '@/features/tabs/tab-kind'
@@ -42,7 +43,8 @@ const EDITORS: Record<TabKind, (id: string) => ReactNode> = {
   request: (id) => <RequestWorkbench key={id} requestId={id} />,
   suite: (id) => <SuiteEditor key={id} suiteId={id} />,
   environment: (id) => <EnvironmentEditor key={id} environmentId={id} />,
-  history: (id) => <HistoryPage key={id} category={historyCategoryOf(id) ?? 'api'} />
+  history: (id) => <HistoryPage key={id} category={historyCategoryOf(id) ?? 'api'} />,
+  message: (id) => <MessageEditor key={id} messageId={id} />
 }
 
 function ActiveEditor({ id }: { id: string }) {

@@ -33,6 +33,13 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     deleteSuite: vi.fn().mockResolvedValue(undefined),
     listRuns: vi.fn().mockResolvedValue([]),
     saveRun: vi.fn().mockResolvedValue(undefined),
+    listMessages: vi.fn().mockResolvedValue([]),
+    saveMessage: vi.fn().mockResolvedValue(undefined),
+    deleteMessage: vi.fn().mockResolvedValue(undefined),
+    openSocket: vi.fn().mockResolvedValue(undefined),
+    sendSocket: vi.fn().mockResolvedValue(undefined),
+    closeSocket: vi.fn().mockResolvedValue(undefined),
+    onSocketEvent: vi.fn(() => () => undefined),
     ...overrides
   }
 }

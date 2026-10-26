@@ -21,6 +21,13 @@ export interface WorkspaceSlice {
 export interface TreeSlice {
   nodes: TreeNode[]
   requests: Record<string, AnyRequest>
+  /** Requests not saved yet (sections that save explicitly), by id, to the folder they will be saved in. */
+  drafts: Record<string, string | null>
+  /** Opens a draft (see `drafts`); returns its id. */
+  addDraft: (parentId: string | null, protocol: ProtocolId) => string
+  /** Adds a draft to the tree under `name` (its current name when empty), which saves it. */
+  saveDraft: (id: string, name: string) => void
+  discardDraft: (id: string) => void
   addFolder: (parentId: string | null, category: CategoryId) => string
   addRequest: (parentId: string | null, protocol: ProtocolId) => string
   /** Copies a request into the same folder and returns the copy's id, or null if `id` is not a request. */

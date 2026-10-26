@@ -1,6 +1,7 @@
 import { BridgeHttpTransport, BridgeScriptExecutor } from './bridge-clients'
 import { NativeFolderPicker, type FolderPicker } from './folder-picker'
 import { MemoryHistoryRepository, type HistoryRepository } from './history-repository'
+import { MemoryMessageRepository, type MessageRepository } from './message-repository'
 import { RequestPipeline } from './request-pipeline'
 import { MemorySuiteRepository, type SuiteRepository } from './suite-repository'
 import { SuiteRunner } from './suite-runner'
@@ -12,6 +13,7 @@ export interface Services {
   pipeline: RequestPipeline
   suites: SuiteRepository
   history: HistoryRepository
+  messages: MessageRepository
   suiteRunner: SuiteRunner
 }
 
@@ -24,5 +26,6 @@ export const services: Services = {
   pipeline,
   suites: window.wiremate ?? new MemorySuiteRepository(),
   history: window.wiremate ?? new MemoryHistoryRepository(),
+  messages: window.wiremate ?? new MemoryMessageRepository(),
   suiteRunner: new SuiteRunner({ pipeline })
 }

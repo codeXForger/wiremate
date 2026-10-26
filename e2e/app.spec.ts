@@ -1,6 +1,6 @@
-import { copyFileSync, existsSync, mkdtempSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs'
 import { createServer, type Server } from 'node:http'
-import type { AddressInfo } from 'node:net'
+import { createServer as createNetServer, type AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
@@ -174,7 +174,7 @@ test('creates MQTT and WebSocket requests in their own sections', async () => {
   await expect(page.getByRole('switch', { name: 'Retain message' })).toBeVisible()
   await section('Realtime').click()
   await page.getByRole('button', { name: 'New WebSocket request' }).click()
-  await page.getByRole('button', { name: 'Connect' }).click()
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
   await expect(page.getByText('Connected', { exact: true })).toBeVisible()
   await screenshot('websocket')
 })
@@ -332,4 +332,153 @@ test('keeps the history of sent requests in the API section', async () => {
   await history.getByRole('textbox', { name: 'Search history' }).fill('')
   await screenshot('history')
   expect(existsSync(join(defaultWorkspace, 'history', 'api.json'))).toBe(true)
+})
+
+/** A port nothing listens on right now. */
+async function freePort(): Promise<number> {
+  const probe = createNetServer()
+  await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve))
+  const { port } = probe.address() as AddressInfo
+  await new Promise((resolve) => probe.close(resolve))
+  return port
+}
+
+async function sendPayload(text: string): Promise<void> {
+  await page.locator('.monaco-editor').first().click()
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A')
+  await page.keyboard.insertText(text)
+  await page.getByRole('button', { name: 'Send', exact: true }).click()
+}
+
+const sessionEvents = () => page.getByRole('list', { name: 'Session events' })
+
+test('runs a TCP server and a client in two tabs, talking over a real socket', async () => {
+  const port = String(await freePort())
+  await section('Network').click()
+  await page.getByRole('button', { name: 'New TCP connection' }).click()
+  await page.getByRole('combobox', { name: 'Mode' }).click()
+  await page.getByRole('option', { name: 'Server' }).click()
+  await page.getByRole('textbox', { name: 'Listen port' }).fill(port)
+  await page.getByRole('button', { name: 'Listen' }).click()
+  await expect(sessionEvents().getByText(`Listening on 127.0.0.1:${port}`)).toBeVisible()
+
+  await page.getByRole('button', { name: 'New TCP connection' }).click()
+  await page.getByRole('textbox', { name: 'Server port' }).fill(port)
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
+  await expect(sessionEvents().getByText(new RegExp(`^Connected to 127.0.0.1:${port}`))).toBeVisible()
+  await sendPayload('hello over tcp')
+
+  const tabs = page.getByRole('tab', { name: /TCP connection/ })
+  await tabs.nth(0).click()
+  await expect(sessionEvents().getByText('hello over tcp')).toBeVisible()
+  await expect(page.getByText('1 peer')).toBeVisible()
+  await sendPayload('hello back')
+  await screenshot('tcp-server')
+
+  await tabs.nth(1).click()
+  await expect(sessionEvents().getByText('hello back')).toBeVisible()
+  await tabs.nth(0).click()
+  await page.getByRole('button', { name: 'Stop' }).click()
+  await tabs.nth(1).click()
+  await expect(page.getByRole('button', { name: 'Connect', exact: true })).toBeVisible()
+})
+
+test('sends UDP datagrams between two listeners', async () => {
+  const [portA, portB] = [String(await freePort()), String(await freePort())]
+  const listen = async (local: string, destination: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New UDP connection' }).click()
+    await page.getByRole('textbox', { name: 'Local address' }).fill('127.0.0.1')
+    await page.getByRole('textbox', { name: 'Local port' }).fill(local)
+    await page.getByLabel('Destination port').fill(destination)
+    await page.getByRole('button', { name: 'Listen' }).click()
+    await expect(sessionEvents().getByText(`Listening on 127.0.0.1:${local}`)).toBeVisible()
+  }
+  await section('Network').click()
+  await listen(portA, portB)
+  await listen(portB, portA)
+  await sendPayload('ping over udp')
+  await page
+    .getByRole('tab', { name: /UDP connection/ })
+    .nth(0)
+    .click()
+  await expect(sessionEvents().getByText('ping over udp')).toBeVisible()
+  await expect(sessionEvents().getByText(`127.0.0.1:${portB}`)).toBeVisible()
+})
+
+test('saves a payload as a message and loads it into another request', async () => {
+  await section('Network').click()
+  await page.getByRole('button', { name: 'New TCP connection' }).click()
+  await page.locator('.monaco-editor').first().click()
+  await page.keyboard.insertText('HELLO {{user}}')
+  await page.getByRole('button', { name: 'Save as message' }).click()
+  await page.getByRole('dialog').getByLabel('Name').fill('Greeting')
+  await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByRole('list', { name: 'Saved messages' }).getByText('Greeting')).toBeVisible()
+
+  await page.getByRole('button', { name: 'New UDP connection' }).click()
+  await page.getByRole('button', { name: 'Load message' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Load a message' })
+  await expect(dialog.getByText('HELLO {{user}}')).toBeVisible()
+  await screenshot('load-message')
+  await dialog.getByRole('button', { name: 'Load', exact: true }).click()
+  await expect(page.getByText('Loaded "Greeting" · 1 of 1')).toBeVisible()
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+S' : 'Control+S')
+  await expect.poll(() => readdirSync(join(defaultWorkspace, 'messages')).length).toBe(1)
+})
+
+/** A TCP server outside the app, so a test can watch what its peer sees. */
+async function watchedTcpServer() {
+  const ended: string[] = []
+  const peer = createNetServer((socket) => socket.on('close', () => ended.push('closed')))
+  await new Promise<void>((resolve) => peer.listen(0, '127.0.0.1', resolve))
+  return { peer, ended, port: String((peer.address() as AddressInfo).port) }
+}
+
+async function connectClient(port: string): Promise<void> {
+  await section('Network').click()
+  await page.getByRole('button', { name: 'New TCP connection' }).click()
+  await page.getByRole('button', { name: 'Save connection' }).click()
+  await page.getByRole('textbox', { name: 'Server port' }).fill(port)
+  await page.getByRole('button', { name: 'Connect', exact: true }).click()
+  await expect(sessionEvents().getByText(new RegExp(`^Connected to 127.0.0.1:${port}`))).toBeVisible()
+}
+
+/** Answers the native "connections are still open" dialog with the given button index. */
+async function answerCloseDialog(button: number): Promise<void> {
+  await app.evaluate(({ dialog }, response) => {
+    dialog.showMessageBox = () => Promise.resolve({ response, checkboxChecked: false })
+  }, button)
+}
+
+test('asks before closing a connected tab, and the server sees the connection end', async () => {
+  const { peer, ended, port } = await watchedTcpServer()
+  await connectClient(port)
+  const tab = page.getByRole('tab', { name: /TCP connection/ }).last()
+  await tab.getByRole('button', { name: /^Close/ }).click()
+  const dialog = page.getByRole('alertdialog')
+  await expect(dialog).toContainText(`is connected to 127.0.0.1:${port}. Closing the tab disconnects it.`)
+  await screenshot('close-connected-tab')
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  expect(ended).toEqual([])
+  await tab.getByRole('button', { name: /^Close/ }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Disconnect and close' }).click()
+  await expect.poll(() => ended).toEqual(['closed'])
+  peer.close()
+})
+
+// Closes the window, so it runs last.
+test('asks before closing the window with open sockets, and closes them', async () => {
+  const { peer, ended, port } = await watchedTcpServer()
+  await connectClient(port)
+  await answerCloseDialog(1)
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close())
+  await expect(page.getByRole('button', { name: 'Disconnect', exact: true })).toBeVisible()
+  expect(ended).toEqual([])
+
+  await answerCloseDialog(0)
+  const closed = page.waitForEvent('close')
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.close())
+  await closed
+  await expect.poll(() => ended).toEqual(['closed'])
+  peer.close()
 })

@@ -1,11 +1,20 @@
-import { CATEGORIES, isCategoryId, type CategoryId } from '@shared/protocols/categories'
+import { CATEGORIES, categoryOf, categoryTerms, isCategoryId, type CategoryId } from '@shared/protocols/categories'
 import type { ProtocolId } from '@shared/types/protocol'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
+/** Sections that save explicitly open a draft, which joins the list once saved; others add the request at once. */
 export function createAndOpenRequest(parentId: string | null, protocol: ProtocolId): void {
-  useTabStore.getState().open(useWorkspaceStore.getState().addRequest(parentId, protocol))
+  const store = useWorkspaceStore.getState()
+  const draft = categoryTerms(categoryOf(protocol)).saveExplicitly
+  const id = draft ? store.addDraft(parentId, protocol) : store.addRequest(parentId, protocol)
+  useTabStore.getState().open(id)
+  if (draft) useTabStore.getState().markDirty(id)
+}
+
+export function isDraft(id: string): boolean {
+  return id in useWorkspaceStore.getState().drafts
 }
 
 /** Duplicates a request and opens the copy in a tab. */
