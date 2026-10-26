@@ -319,3 +319,17 @@ test('asks before deleting a request', async () => {
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
   await expect(request).toHaveCount(0)
 })
+
+test('keeps the history of sent requests in the API section', async () => {
+  await section('API').click()
+  await page.getByRole('button', { name: /^History/ }).click()
+  const history = page.getByRole('region', { name: 'History · API requests' })
+  await expect(history.getByRole('table', { name: 'Sent requests' })).toBeVisible()
+  await expect(history.getByText(/Showing \d+ of \d+/)).toBeVisible()
+  await history.getByRole('textbox', { name: 'Search history' }).fill('user=42')
+  await expect(history.getByRole('row')).toHaveCount(2)
+  await expect(history.getByRole('row').nth(1)).toContainText('200 OK')
+  await history.getByRole('textbox', { name: 'Search history' }).fill('')
+  await screenshot('history')
+  expect(existsSync(join(defaultWorkspace, 'history', 'api.json'))).toBe(true)
+})

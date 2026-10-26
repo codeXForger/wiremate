@@ -1,5 +1,7 @@
 import type { TestSuite } from '@shared/types/suite'
 import type { Environment, TreeNode } from '@shared/types/workspace'
+import { CATEGORIES, type CategoryId } from '@shared/protocols/categories'
+import { useHistoryStore } from '@/stores/history-store'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useUiStore, type DeleteConfirmation } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -45,5 +47,13 @@ export function askToDeleteSuite(suite: TestSuite): void {
     title: 'Delete test suite?',
     message: `"${suite.name}" and its run history will be deleted.`,
     onConfirm: () => useSuiteStore.getState().remove(suite.id)
+  })
+}
+
+export function askToClearHistory(category: CategoryId, total: number): void {
+  confirmDelete({
+    title: 'Clear history?',
+    message: `All ${plural(total, 'request')} in the ${CATEGORIES[category].label} history will be removed.`,
+    onConfirm: () => useHistoryStore.getState().clear(category)
   })
 }

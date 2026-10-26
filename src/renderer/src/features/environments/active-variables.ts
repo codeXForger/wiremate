@@ -30,3 +30,7 @@ export function storeVariables(next: Variables): boolean {
 export function hasActiveEnvironment(): boolean {
   return activeEnvironment() !== undefined
 }
+
+export function activeEnvironmentName(): string | null {
+  return activeEnvironment()?.name ?? null
+}

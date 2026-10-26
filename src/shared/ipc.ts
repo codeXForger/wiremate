@@ -1,3 +1,5 @@
+import type { CategoryId } from './protocols/categories'
+import type { HistoryEntry } from './types/history'
 import type { HttpResult, WireRequest } from './types/http'
 import type { AnyRequest } from './types/protocol'
 import type { ScriptOutcome, ScriptRun } from './types/scripting'
@@ -30,6 +32,9 @@ export const IpcChannel = {
   deleteSuite: 'suites:delete',
   listRuns: 'runs:list',
   saveRun: 'runs:save',
+  listHistory: 'history:list',
+  addHistory: 'history:add',
+  clearHistory: 'history:clear',
   chooseReportFile: 'report:choose-file',
   savePdfReport: 'report:save-pdf'
 } as const
@@ -57,6 +62,13 @@ export interface WorkspaceStorageApi {
   saveSettings(workspaceId: string, settings: WorkspaceSettings): Promise<void>
 }
 
+/** Requests sent from a section, kept per workspace, newest first. */
+export interface HistoryStorageApi {
+  listHistory(workspaceId: string, category: CategoryId): Promise<HistoryEntry[]>
+  addHistory(workspaceId: string, entry: HistoryEntry): Promise<void>
+  clearHistory(workspaceId: string, category: CategoryId): Promise<void>
+}
+
 export interface SuiteStorageApi {
   listSuites(workspaceId: string): Promise<TestSuite[]>
   saveSuite(workspaceId: string, suite: TestSuite): Promise<void>
@@ -65,7 +77,7 @@ export interface SuiteStorageApi {
   saveRun(workspaceId: string, run: SuiteRun): Promise<void>
 }
 
-export interface WireMateApi extends WorkspaceStorageApi, SuiteStorageApi {
+export interface WireMateApi extends WorkspaceStorageApi, SuiteStorageApi, HistoryStorageApi {
   readonly platform: string
   selectFolder(): Promise<string | null>
   /** `transferId` names the request so `cancelHttp` can abort it. */

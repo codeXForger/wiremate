@@ -19,7 +19,7 @@ describe('App shell', () => {
     const labels = within(rail)
       .getAllByRole('button')
       .map((b) => b.textContent)
-    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Env', 'History', 'Settings'])
+    expect(labels).toEqual([...CATEGORY_IDS.map((id) => CATEGORIES[id].label), 'Env', 'Settings'])
     expect(within(rail).getByRole('button', { name: 'API' })).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -42,8 +42,6 @@ describe('App shell', () => {
 
   it('switches to utility views', async () => {
     const { user } = await renderApp()
-    await goTo(user, 'History')
-    expect(screen.getByText(/newest first/)).toBeInTheDocument()
     await goTo(user, 'Settings')
     expect(screen.getByRole('button', { name: 'Sign in with GitHub' })).toBeDisabled()
   })

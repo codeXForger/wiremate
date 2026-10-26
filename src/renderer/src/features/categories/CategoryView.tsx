@@ -18,13 +18,15 @@ interface CategoryViewProps {
 }
 
 export function CategoryView({ category }: CategoryViewProps) {
-  const ExtraSection = CATEGORY_SECTIONS[category]
+  const sections = CATEGORY_SECTIONS[category] ?? []
   return (
     <Column>
       <CategoryHeader category={category} />
       <QuickCreate category={category} />
       <Collections category={category} />
-      {ExtraSection && <ExtraSection />}
+      {sections.map((Section, index) => (
+        <Section key={index} category={category} />
+      ))}
     </Column>
   )
 }

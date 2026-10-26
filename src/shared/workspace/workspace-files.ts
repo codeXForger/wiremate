@@ -15,6 +15,7 @@ import type { WorkspaceSettings } from '../types/workspace'
  *   environments/<id>.json        one file per environment
  *   suites/<id>.json              test suites
  *   runs/<suiteId>/<runId>.json   suite run history
+ *   history/<section>.json        requests sent from a section, newest first
  */
 export const WORKSPACE_FILES = {
   manifest: 'wiremate.json',
@@ -22,7 +23,8 @@ export const WORKSPACE_FILES = {
   requests: 'requests',
   environments: 'environments',
   suites: 'suites',
-  runs: 'runs'
+  runs: 'runs',
+  history: 'history'
 } as const
 
 export const DEFAULT_SETTINGS: WorkspaceSettings = { theme: 'dark', activeEnvironmentId: null }

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CategoryId } from '@shared/protocols/categories'
 
-export type UtilityView = 'environments' | 'history' | 'settings'
+export type UtilityView = 'environments' | 'settings'
 export type SidebarView = CategoryId | UtilityView
 /** What a delete confirmation shows, and what runs when it is confirmed. */
 export interface DeleteConfirmation {

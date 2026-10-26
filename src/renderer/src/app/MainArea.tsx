@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { ResizableGroup, ResizableHandle, ResizablePanel } from '@/components/ui/resizable'
 import { ConsolePanel } from '@/features/console/ConsolePanel'
 import { EnvironmentEditor } from '@/features/environments/EnvironmentEditor'
+import { historyCategoryOf } from '@/features/history/history-entry'
+import { HistoryPage } from '@/features/history/HistoryPage'
 import { RequestWorkbench } from '@/features/request/RequestWorkbench'
 import { SuiteEditor } from '@/features/suites/SuiteEditor'
 import { tabKind, type TabKind } from '@/features/tabs/tab-kind'
@@ -39,7 +41,8 @@ function Editors() {
 const EDITORS: Record<TabKind, (id: string) => ReactNode> = {
   request: (id) => <RequestWorkbench key={id} requestId={id} />,
   suite: (id) => <SuiteEditor key={id} suiteId={id} />,
-  environment: (id) => <EnvironmentEditor key={id} environmentId={id} />
+  environment: (id) => <EnvironmentEditor key={id} environmentId={id} />,
+  history: (id) => <HistoryPage key={id} category={historyCategoryOf(id) ?? 'api'} />
 }
 
 function ActiveEditor({ id }: { id: string }) {

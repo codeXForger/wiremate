@@ -3,7 +3,7 @@ import type { TestSuite } from '@shared/types/suite'
 import type { StepListener, SuiteRunInput } from '@/services/suite-runner'
 import { useSuiteStore } from '@/stores/suite-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { activeVariables } from '../environments/active-variables'
+import { activeEnvironmentName, activeVariables } from '../environments/active-variables'
 import { recordRun } from '../request/send-http'
 import { expandSuite } from './suite-steps'
 
@@ -12,11 +12,6 @@ function recordStep(suiteId: string): StepListener {
     if (output) recordRun(output)
     useSuiteStore.getState().addResult(suiteId, result)
   }
-}
-
-function environmentName(): string | null {
-  const { environments, activeEnvironmentId } = useWorkspaceStore.getState()
-  return environments.find((env) => env.id === activeEnvironmentId)?.name ?? null
 }
 
 /** Runs in progress, by suite id. */
@@ -29,7 +24,7 @@ export function stopSuite(suiteId: string): void {
 
 function startRun(suite: TestSuite): SuiteRunInput {
   const steps = expandSuite(suite.items, useWorkspaceStore.getState())
-  const meta = { total: steps.length, startedAt: Date.now(), environmentName: environmentName() }
+  const meta = { total: steps.length, startedAt: Date.now(), environmentName: activeEnvironmentName() }
   useSuiteStore.getState().startRun(suite.id, meta)
   const controller = new AbortController()
   running.set(suite.id, controller)

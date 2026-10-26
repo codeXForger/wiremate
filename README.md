@@ -32,6 +32,7 @@ the workspace settings (theme and active environment).
   environments/<environmentId>.json
   suites/<suiteId>.json            # test suites
   runs/<suiteId>/<runId>.json      # suite run history (newest 50 listed)
+  history/<section>.json           # requests sent from a section, newest 500
 ```
 
 Changes are written on their own a moment after you stop typing; the dot on a tab means a change is not written yet,
@@ -87,6 +88,13 @@ but it is not a security sandbox: only run scripts you trust.
 While a request is on its way, **Send** turns into **Cancel**. After it returns, the response pane shows the status, the total time (hover for time to first byte), the size and a
 **Tests** tab with every result. The **Console** (status bar, or `` Ctrl/Cmd+` ``) lists each request as it was
 sent (headers and body after variables are filled in), each response, missing variables and script output.
+
+## History
+
+Every request sent from the API section is kept in its **History** (in the API pane, below the collections), newest
+first, up to 500. It opens in a tab as a table: when, which request and URL as sent, environment, status, duration,
+size and tests passed and failed. Search covers name, URL, environment and status; filters narrow by status class,
+method, environment and tests. Click a row to open the request. History is saved in `history/api.json`.
 
 ## Test suites
 

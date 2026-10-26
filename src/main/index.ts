@@ -2,6 +2,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { DialogController } from './dialog-controller'
+import { HistoryFileStore } from './history/history-file-store'
 import { HttpClient } from './http/http-client'
 import { ReportController } from './reports/report-controller'
 import { RequestController } from './request-controller'
@@ -30,7 +31,7 @@ function registerControllers(): void {
     http: new HttpClient(),
     scripts: new ScriptRunner({ workerPath: scriptWorkerPath })
   }).register()
-  new WorkspaceController(workspaces, new SuiteFileStore()).register()
+  new WorkspaceController(workspaces, new SuiteFileStore(), new HistoryFileStore()).register()
   new ReportController().register()
 }
 

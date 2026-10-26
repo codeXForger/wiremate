@@ -1,5 +1,5 @@
 import { useState, type MouseEvent, type ReactNode } from 'react'
-import { FlaskConical, Variable, X } from 'lucide-react'
+import { FlaskConical, History, Variable, X } from 'lucide-react'
 import type { AnyRequest } from '@shared/types/protocol'
 import type { TestSuite } from '@shared/types/suite'
 import type { Environment } from '@shared/types/workspace'
@@ -14,6 +14,7 @@ import { useTabStore } from '@/stores/tab-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useRequest } from '../request/use-request'
 import { renameEnvironment } from '../environments/environment-actions'
+import { historyCategoryOf, historyTitle } from '../history/history-entry'
 import { renameSuite } from '../suites/suite-actions'
 import { tabKind, type TabKind } from './tab-kind'
 
@@ -40,6 +41,8 @@ interface TabShellProps {
   accent: string
   icon: ReactNode
   onRename?: (id: string, name: string) => void
+  /** False for tabs whose name is fixed, like a history. */
+  renamable?: boolean
 }
 
 function tabProps({ target, accent }: TabShellProps, active: boolean, rename: () => void) {
@@ -60,7 +63,7 @@ function TabShell(props: TabShellProps) {
   const [renaming, setRenaming] = useState(false)
   const active = useTabStore((state) => state.activeId === props.target.id)
   return (
-    <div {...tabProps(props, active, () => setRenaming(true))}>
+    <div {...tabProps(props, active, () => setRenaming(props.renamable !== false))}>
       {props.icon}
       <TabName {...props} renaming={renaming} onDone={() => setRenaming(false)} />
       <CloseTabButton target={props.target} />
@@ -103,10 +106,19 @@ function EnvironmentTabContent({ environment }: { environment: Environment }) {
   return <TabShell target={environment} accent="var(--primary)" icon={icon} onRename={renameEnvironment} />
 }
 
+function HistoryTab({ id }: { id: string }) {
+  const category = historyCategoryOf(id) ?? 'api'
+  const icon = <History className="size-3 shrink-0 text-muted-foreground" />
+  return (
+    <TabShell target={{ id, name: historyTitle(category) }} accent="var(--primary)" icon={icon} renamable={false} />
+  )
+}
+
 const TABS: Record<TabKind, (props: { id: string }) => ReactNode> = {
   request: RequestTab,
   suite: SuiteTab,
-  environment: EnvironmentTab
+  environment: EnvironmentTab,
+  history: HistoryTab
 }
 
 const CLOSE_CLASS = 'ml-1 flex size-5 shrink-0 items-center justify-center rounded hover:bg-surface'
