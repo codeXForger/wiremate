@@ -1,11 +1,9 @@
-import type { SocketEvent, SocketEventBody, SocketSpec } from '@shared/types/socket'
-import { errorMessage } from '@shared/scripting/describe'
+import type { SocketEventBody, SocketSpec } from '@shared/types/socket'
+import { SessionManager } from '../sessions/session-manager'
 import type { Emit, SocketSession } from './socket-session'
 import { TcpClientSession } from './tcp-client-session'
 import { TcpServerSession } from './tcp-server-session'
 import { UdpSession } from './udp-session'
-
-export type SocketSink = (event: SocketEvent) => void
 
 export type SocketKind = 'TCP client' | 'TCP server' | 'UDP socket'
 
@@ -22,32 +20,15 @@ function createSession(spec: SocketSpec, emit: Emit): SocketSession {
 }
 
 /** Keeps the open sockets by session id, and forgets each one once it has closed. */
-export class SocketManager {
-  private readonly sessions = new Map<string, SocketSession>()
+export class SocketManager extends SessionManager<SocketSpec, SocketEventBody, SocketSession> {
   private readonly kinds = new Map<string, SocketKind>()
 
-  public constructor(private readonly now: () => number = Date.now) {}
-
-  public open(sessionId: string, spec: SocketSpec, sink: SocketSink): void {
-    const emit: Emit = (body) => {
-      if (body.kind === 'close') this.forget(sessionId)
-      sink(this.stamp(sessionId, body))
-    }
-    try {
-      this.sessions.set(sessionId, createSession(spec, emit))
-      this.kinds.set(sessionId, kindOf(spec))
-    } catch (error) {
-      emit({ kind: 'error', message: errorMessage(error) })
-      emit({ kind: 'close', message: 'Could not open the socket' })
-    }
+  public constructor(now: () => number = Date.now) {
+    super({ create: createSession, failure: 'Could not open the socket', now })
   }
 
   public send(sessionId: string, bytes: Uint8Array, to?: string): void {
-    this.sessions.get(sessionId)?.send(bytes, to)
-  }
-
-  public close(sessionId: string): void {
-    this.sessions.get(sessionId)?.close()
+    this.session(sessionId)?.send(bytes, to)
   }
 
   /** How many sockets are open (or opening), by kind. */
@@ -55,16 +36,12 @@ export class SocketManager {
     return [...this.kinds.values()]
   }
 
-  public closeAll(): void {
-    this.sessions.forEach((session) => session.close())
+  protected override opened(sessionId: string, spec: SocketSpec): void {
+    this.kinds.set(sessionId, kindOf(spec))
   }
 
-  private forget(sessionId: string): void {
-    this.sessions.delete(sessionId)
+  protected override forget(sessionId: string): void {
+    super.forget(sessionId)
     this.kinds.delete(sessionId)
-  }
-
-  private stamp(sessionId: string, body: SocketEventBody): SocketEvent {
-    return { ...body, sessionId, at: this.now() }
   }
 }

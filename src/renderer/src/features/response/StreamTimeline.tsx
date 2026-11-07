@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { ArrowDownLeft, ArrowUpRight, CircleAlert, CircleDot, type LucideIcon } from 'lucide-react'
+import type { KafkaRecordMeta } from '@shared/types/kafka'
 import type { PayloadEncoding } from '@shared/types/protocol'
 import type { StreamDirection, StreamEvent, StreamSession } from '@shared/types/response'
 import { decodePayload } from '@shared/utils/payload'
@@ -66,6 +67,7 @@ function SessionHeader({ requestId, session, children }: StreamTimelineProps & {
 }
 
 function statusOf(session: StreamSession): string {
+  if (session.label) return session.label
   if (session.connecting) return 'Connecting…'
   return session.connected ? 'Connected' : 'Disconnected'
 }
@@ -92,9 +94,26 @@ function EventRow({ event, view }: { event: StreamEvent; view: PayloadEncoding }
       <time className="shrink-0 text-muted-foreground">{new Date(event.at).toLocaleTimeString()}</time>
       <Icon aria-label={label} className={cn('mt-0.5 size-3.5 shrink-0', className)} />
       {event.peer && <span className="shrink-0 text-muted-foreground">{event.peer}</span>}
-      <span className={cn('break-all whitespace-pre-wrap select-text', event.direction === 'error' && className)}>
-        {data || '(empty)'}
-      </span>
+      <EventBody event={event} data={data} className={event.direction === 'error' ? className : undefined} />
     </li>
+  )
+}
+
+function EventBody({ event, data, className }: { event: StreamEvent; data: string; className?: string }) {
+  return (
+    <div className="min-w-0">
+      <span className={cn('break-all whitespace-pre-wrap select-text', className)}>{data || '(empty)'}</span>
+      {event.record && <RecordDetails record={event.record} />}
+    </div>
+  )
+}
+
+/** A Kafka record's key and headers, under its value. */
+function RecordDetails({ record }: { record: KafkaRecordMeta }) {
+  const parts = [`key ${record.key ?? '(none)'}`, ...record.headers.map(({ key, value }) => `${key}: ${value}`)]
+  return (
+    <div className="mt-0.5 break-all text-muted-foreground select-text" aria-label="Record details">
+      {parts.join(' · ')}
+    </div>
   )
 }

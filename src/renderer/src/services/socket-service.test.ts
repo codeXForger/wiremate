@@ -44,10 +44,10 @@ describe('SocketService', () => {
   it('stops sending once the socket has closed', async () => {
     const { service, sessionId, emit, bridge } = setup()
     await service.open('r1', spec)
-    await service.send('r1', new Uint8Array([1]), '1.2.3.4:5')
+    await service.sendBytes('r1', new Uint8Array([1]), '1.2.3.4:5')
     expect(bridge.sendSocket).toHaveBeenCalledWith(sessionId(), new Uint8Array([1]), '1.2.3.4:5')
     emit({ sessionId: sessionId(), at: 1, kind: 'close', message: 'Disconnected' })
-    await service.send('r1', new Uint8Array([2]))
+    await service.sendBytes('r1', new Uint8Array([2]))
     await service.close('r1')
     expect(bridge.sendSocket).toHaveBeenCalledTimes(1)
     expect(bridge.closeSocket).not.toHaveBeenCalled()
@@ -77,7 +77,7 @@ describe('SocketService', () => {
       store: { get: (id) => sessions.get(id), set: (id, session) => sessions.set(id, session) }
     })
     service.retain(new Set())
-    await service.send('r1', new Uint8Array())
+    await service.sendBytes('r1', new Uint8Array())
     await service.close('r1')
     await service.open('r1', spec)
     expect(sessions.get('r1')?.events).toMatchObject([{ direction: 'error' }])

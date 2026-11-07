@@ -2,16 +2,17 @@ import { categoryOf, categoryTerms } from '@shared/protocols/categories'
 import { useTabStore } from '@/stores/tab-store'
 import { useUiStore, type DeleteConfirmation } from '@/stores/ui-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { socketSessions } from '../protocols/socket/socket-actions'
+import { kafkaCloseConfirmation } from '../protocols/kafka/kafka-close'
+import { hasLiveSession } from '../protocols/live-sessions'
 import { socketCloseConfirmation } from '../protocols/socket/socket-close'
 
-/** Closing an unsaved draft throws it away (and closes its socket), so it asks first. */
+/** Closing an unsaved draft throws it away (and closes its connection), so it asks first. */
 function draftConfirmation(id: string): DeleteConfirmation | null {
   const { requests, drafts } = useWorkspaceStore.getState()
   const request = requests[id]
   if (!request || !(id in drafts)) return null
   const { item } = categoryTerms(categoryOf(request.protocol))
-  const live = socketSessions.isOpen(id) ? ' Its connection closes too.' : ''
+  const live = hasLiveSession(id) ? ' Its connection closes too.' : ''
   return {
     title: `Discard this ${item}?`,
     message: `"${request.name}" was never saved.${live}`,
@@ -21,10 +22,10 @@ function draftConfirmation(id: string): DeleteConfirmation | null {
   }
 }
 
-/** Closes a tab; an unsaved draft or a request with an open socket asks first. */
+/** Closes a tab; an unsaved draft or a request with an open connection asks first. */
 export function requestCloseTab(id: string): void {
   const close = (): void => useTabStore.getState().close(id)
-  const confirmation = draftConfirmation(id) ?? socketCloseConfirmation(id, close)
+  const confirmation = draftConfirmation(id) ?? socketCloseConfirmation(id, close) ?? kafkaCloseConfirmation(id, close)
   if (confirmation) useUiStore.getState().openDialog({ type: 'confirm-delete', ...confirmation })
   else close()
 }

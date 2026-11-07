@@ -12,6 +12,15 @@ export function interpolate(text: string, variables: Variables, missing?: Set<st
   })
 }
 
+/** Fills `{{variables}}` in an object's top-level text fields; other fields stay as they are. */
+export function interpolateFields<C extends object>(config: C, variables: Variables): C {
+  const entries = Object.entries(config).map(([key, value]) => [
+    key,
+    typeof value === 'string' ? interpolate(value, variables) : (value as unknown)
+  ])
+  return Object.fromEntries(entries) as C
+}
+
 /** A piece of a template: plain text, or a `{{variable}}` placeholder. Offsets are into the whole template. */
 export interface TemplateSegment {
   text: string

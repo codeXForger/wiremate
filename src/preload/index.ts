@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { AppEvent, IpcChannel, type WireMateApi } from '@shared/ipc'
-import type { SocketEvent } from '@shared/types/socket'
 
 type Method = keyof typeof IpcChannel
 
@@ -17,16 +16,24 @@ function onBeforeClose(finish: () => Promise<void>): void {
   })
 }
 
-function onSocketEvent(listener: (event: SocketEvent) => void): () => void {
-  const forward = (_event: unknown, socketEvent: SocketEvent): void => listener(socketEvent)
-  ipcRenderer.on(AppEvent.socketEvent, forward)
-  return () => ipcRenderer.off(AppEvent.socketEvent, forward)
+/** What main pushes, by the bridge method that listens to it. */
+const EVENTS = { onSocketEvent: AppEvent.socketEvent, onKafkaEvent: AppEvent.kafkaEvent } satisfies Partial<
+  Record<keyof WireMateApi, string>
+>
+
+/** Listens to what main pushes on a channel; the returned function stops listening. */
+function subscriber(channel: string): (listener: (event: unknown) => void) => () => void {
+  return (listener) => {
+    const forward = (_event: unknown, payload: unknown): void => listener(payload)
+    ipcRenderer.on(channel, forward)
+    return () => ipcRenderer.off(channel, forward)
+  }
 }
 
 const api = {
   platform: process.platform,
   onBeforeClose,
-  onSocketEvent,
+  ...Object.fromEntries(Object.entries(EVENTS).map(([method, channel]) => [method, subscriber(channel)])),
   ...Object.fromEntries(METHODS.map((method) => [method, invoker(method)]))
 } as WireMateApi
 

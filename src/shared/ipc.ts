@@ -1,8 +1,16 @@
 import type { CategoryId } from './protocols/categories'
 import type { HistoryEntry } from './types/history'
+import type {
+  KafkaAdminAction,
+  KafkaAdminOutcome,
+  KafkaAdminRequest,
+  KafkaEvent,
+  KafkaOutgoing,
+  KafkaSessionSpec
+} from './types/kafka'
 import type { SavedMessage } from './types/message'
 import type { HttpResult, WireRequest } from './types/http'
-import type { AnyRequest } from './types/protocol'
+import type { AnyRequest, KafkaConnection } from './types/protocol'
 import type { ScriptOutcome, ScriptRun } from './types/scripting'
 import type { SocketEvent, SocketSpec } from './types/socket'
 import type { SuiteRun, TestSuite } from './types/suite'
@@ -42,6 +50,10 @@ export const IpcChannel = {
   openSocket: 'socket:open',
   sendSocket: 'socket:send',
   closeSocket: 'socket:close',
+  openKafka: 'kafka:open',
+  produceKafka: 'kafka:produce',
+  closeKafka: 'kafka:close',
+  kafkaAdmin: 'kafka:admin',
   listMessages: 'messages:list',
   saveMessage: 'messages:save',
   deleteMessage: 'messages:delete'
@@ -52,7 +64,9 @@ export const AppEvent = {
   beforeClose: 'app:before-close',
   readyToClose: 'app:ready-to-close',
   /** Main pushes everything that happens on an open socket. */
-  socketEvent: 'socket:event'
+  socketEvent: 'socket:event',
+  /** Main pushes what happens on an open Kafka producer or consumer. */
+  kafkaEvent: 'kafka:event'
 } as const
 
 /**
@@ -107,8 +121,24 @@ export interface SocketApi {
   onSocketEvent(listener: (event: SocketEvent) => void): () => void
 }
 
+/**
+ * Kafka clients, owned by the main process. Producers and consumers are sessions like sockets: opened under an id
+ * the renderer picks, reporting through `onKafkaEvent`. Admin calls are one-off requests.
+ */
+export interface KafkaApi {
+  openKafka(sessionId: string, spec: KafkaSessionSpec): Promise<void>
+  produceKafka(sessionId: string, message: KafkaOutgoing): Promise<void>
+  closeKafka(sessionId: string): Promise<void>
+  /** Returns a function that stops listening. */
+  onKafkaEvent(listener: (event: KafkaEvent) => void): () => void
+  kafkaAdmin<A extends KafkaAdminAction>(
+    connection: KafkaConnection,
+    request: KafkaAdminRequest<A>
+  ): Promise<KafkaAdminOutcome<A>>
+}
+
 export interface WireMateApi
-  extends WorkspaceStorageApi, SuiteStorageApi, HistoryStorageApi, MessageStorageApi, SocketApi {
+  extends WorkspaceStorageApi, SuiteStorageApi, HistoryStorageApi, MessageStorageApi, SocketApi, KafkaApi {
   readonly platform: string
   selectFolder(): Promise<string | null>
   /** `transferId` names the request so `cancelHttp` can abort it. */

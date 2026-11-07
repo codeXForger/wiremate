@@ -4,6 +4,9 @@ import { app, BrowserWindow } from 'electron'
 import { DialogController } from './dialog-controller'
 import { HistoryFileStore } from './history/history-file-store'
 import { HttpClient } from './http/http-client'
+import { KafkaAdminService } from './kafka/admin/kafka-admin-service'
+import { KafkaController } from './kafka/kafka-controller'
+import { KafkaManager } from './kafka/kafka-manager'
 import { MessageFileStore } from './messages/message-file-store'
 import { ReportController } from './reports/report-controller'
 import { RequestController } from './request-controller'
@@ -27,6 +30,7 @@ function storageLocations(): { home: string; appData: string } {
 }
 
 const sockets = new SocketManager()
+const kafka = new KafkaManager()
 
 function registerControllers(): void {
   const { home, appData } = storageLocations()
@@ -41,6 +45,7 @@ function registerControllers(): void {
   new WorkspaceController(workspaces, stores).register()
   new ReportController().register()
   new SocketController(sockets).register()
+  new KafkaController(kafka, new KafkaAdminService()).register()
 }
 
 const closeGuard = new SocketCloseGuard(sockets)
@@ -55,7 +60,10 @@ function bootstrap(): void {
 }
 
 /** The windows asked before closing; whatever is still open (a crashed window's sockets) closes on the way out. */
-app.on('will-quit', () => sockets.closeAll())
+app.on('will-quit', () => {
+  sockets.closeAll()
+  kafka.closeAll()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()

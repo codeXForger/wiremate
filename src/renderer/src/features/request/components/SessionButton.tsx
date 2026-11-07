@@ -1,18 +1,18 @@
 import { Plug, Unplug, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useStreamSession } from '../../request/use-request-actions'
-import { useSocketActions } from './socket-actions'
-import type { ModeCopy } from './socket-copy'
+import { useStreamSession } from '../use-request-actions'
 
 interface SessionButtonProps {
   requestId: string
-  copy: Pick<ModeCopy, 'open' | 'close'>
+  /** The button's words: "Connect" and "Disconnect", "Listen" and "Stop"… */
+  copy: { open: string; close: string }
+  open: () => void
+  close: () => void
 }
 
-/** Opens and closes the request's socket; cancels while it is still connecting. Closing is red. */
-export function SessionButton({ requestId, copy }: SessionButtonProps) {
+/** Opens and closes the request's live session (a socket, a Kafka client); cancels while it is still opening. */
+export function SessionButton({ requestId, copy, open, close }: SessionButtonProps) {
   const session = useStreamSession(requestId)
-  const { open, close } = useSocketActions(requestId)
   if (session?.connecting) return <CancelButton onClick={close} />
   return <ToggleButton live={session?.connected ?? false} copy={copy} onOpen={open} onClose={close} />
 }

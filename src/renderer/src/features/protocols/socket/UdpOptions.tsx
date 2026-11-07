@@ -2,7 +2,7 @@ import type { UdpMode } from '@shared/types/protocol'
 import { FieldRow } from '../../request/components/FieldRow'
 import { TextField } from '../../request/components/TextField'
 import { OptionsPanel } from './OptionsPanel'
-import { NumberField, SwitchField } from './SocketFields'
+import { NumberField, SwitchField } from '../../request/components/SettingFields'
 import { useOptionsBinder } from './use-options-binder'
 
 interface UdpOptionsProps {

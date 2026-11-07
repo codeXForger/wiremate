@@ -1,9 +1,8 @@
 import type { TcpMode, UdpMode } from '@shared/types/protocol'
+import type { ModeLabel } from '../../request/components/ModeToolbar'
 
 /** The words a socket editor uses in one mode. */
-export interface ModeCopy {
-  label: string
-  hint: string
+export interface ModeCopy extends ModeLabel {
   /** The address and port in the bar at the top. */
   host: string
   port: string

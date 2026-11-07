@@ -1,4 +1,8 @@
 import type {
+  KafkaConfig,
+  KafkaConnection,
+  KafkaConsumerSettings,
+  KafkaProducerSettings,
   ProtocolConfigMap,
   ProtocolId,
   SocketPayload,
@@ -56,6 +60,40 @@ const udpDefaults = (): UdpConfig => ({
   options: udpOptions()
 })
 
+const KAFKA_CONNECTION: KafkaConnection = {
+  brokers: 'localhost:9092',
+  clientId: 'wiremate',
+  auth: 'none',
+  username: '',
+  password: '',
+  ssl: false
+}
+
+const KAFKA_PRODUCER: KafkaProducerSettings = { acks: 'all', compression: 'none', idempotent: false }
+
+const KAFKA_CONSUMER: KafkaConsumerSettings = {
+  startFrom: 'latest',
+  startTimestamp: '',
+  autoCommit: true,
+  readCommitted: false,
+  sessionTimeoutMs: 30_000,
+  maxWaitMs: 5000,
+  maxMessages: 0
+}
+
+const kafkaDefaults = (): KafkaConfig => ({
+  mode: 'producer',
+  ...KAFKA_CONNECTION,
+  ...KAFKA_PRODUCER,
+  ...KAFKA_CONSUMER,
+  topic: '',
+  groupId: 'wiremate',
+  key: '',
+  value: '',
+  headers: [],
+  partition: ''
+})
+
 export const PROTOCOL_DEFAULTS: DefaultBuilders = {
   http: () => ({
     method: 'GET',
@@ -88,7 +126,7 @@ export const PROTOCOL_DEFAULTS: DefaultBuilders = {
     queue: '',
     message: ''
   }),
-  kafka: () => ({ brokers: 'localhost:9092', topic: '', groupId: 'wiremate', key: '', value: '' }),
+  kafka: kafkaDefaults,
   mqtt: () => ({
     brokerUrl: 'mqtt://localhost:1883',
     clientId: 'wiremate',

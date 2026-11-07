@@ -6,9 +6,9 @@ import { useConfigBinder, useFieldBinder, type Bound } from '../../request/use-f
 import { useRequestConfig } from '../../request/use-request'
 import type { EditorProps } from '../types'
 import { EndpointBar } from './EndpointBar'
-import { ModeToolbar } from './ModeToolbar'
+import { ModeToolbar } from '../../request/components/ModeToolbar'
 import { BROADCAST_ADDRESS, UDP_COPY } from './socket-copy'
-import { NumberField } from './SocketFields'
+import { NumberField } from '../../request/components/SettingFields'
 import { SocketTabs } from './SocketTabs'
 import { UdpOptions } from './UdpOptions'
 

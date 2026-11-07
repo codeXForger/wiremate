@@ -25,7 +25,9 @@ violation of the coding rules is reported straight back, so fix it before moving
 ## Layout
 
 - `src/main`: Electron main process (window, IPC controllers). `http/` sends HTTP with fetch, `sockets/` owns real
-  TCP clients/servers and UDP sockets (events pushed to the renderer on `socket:event`), `scripting/` runs
+  TCP clients/servers and UDP sockets (events pushed to the renderer on `socket:event`), `kafka/` owns Kafka producers
+  and consumers (`@platformatic/kafka`, events on `kafka:event`) and one-off admin calls (`kafka/admin/`), both built on
+  the generic `sessions/` manager, `scripting/` runs
   request scripts in a worker thread (`node:vm`), `workspaces/` and `suites/` read and write the workspace folder
   (layout in `src/shared/workspace/workspace-files.ts`). The renderer names workspaces by id only.
 - `src/preload`: typed `window.wiremate` bridge (`WireMateApi` in `src/shared/ipc.ts`)
@@ -69,9 +71,13 @@ saved messages (`features/messages/`, `messages/<id>.json` in the workspace), wh
 - Use `Column`, `Hint`, `IconButton`, `PanelTabs`, `CodePane` and `SidebarHeader` before writing new layout markup.
 - Each protocol has a "wire" colour (`--wire-<id>` in `globals.css`). Use `wireColor()`, never hard-coded hex.
 - HTTP goes over the network through `RequestPipeline`. TCP and UDP open real sockets through `SocketService`
-  (`features/protocols/socket/socket-actions.ts`), one session per request. Other protocols are simulated
+  (`features/protocols/socket/socket-actions.ts`), one session per request. Kafka producers and consumers open real
+  clients through `KafkaService` (`features/protocols/kafka/kafka-actions.ts`); its admin view calls the cluster through
+  `admin/admin-client.ts`. Both services extend `LiveSessionService`. Other protocols are simulated
   (`SimulatedRunner`) until their feature branch adds a real client.
 - In tests, `installSocketNetwork()` (`src/renderer/test/socket-network.ts`) fakes the main process's sockets in memory.
+  `installKafkaCluster()` (`src/renderer/test/kafka-cluster.ts`) fakes a Kafka cluster the same way. Broker tests in
+  `src/main/kafka` run only with `KAFKA_BROKERS=localhost:9092` set.
 - In tests, Monaco and react-resizable-panels are replaced by stubs (`src/renderer/test/`). Use `renderApp()` from
   `src/renderer/test/render-app.tsx` for integration tests (it opens the demo fixture from `src/renderer/test/seed.ts`;
   the app itself has no demo data), and `installBridge()` from
