@@ -1,7 +1,7 @@
 import type { TcpMode } from '@shared/types/protocol'
 import { FieldRow } from '../../request/components/FieldRow'
 import { OptionsPanel } from './OptionsPanel'
-import { NumberField, SwitchField } from './SocketFields'
+import { NumberField, SwitchField } from '../../request/components/SettingFields'
 import { useOptionsBinder } from './use-options-binder'
 
 interface TcpOptionsProps {

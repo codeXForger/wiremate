@@ -2,6 +2,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface OptionSelectProps<T extends string> {
   label: string
+  /** Lets a visible `<label>` point at the select. */
+  id?: string
   value: T
   options: readonly T[]
   className?: string
@@ -13,7 +15,7 @@ interface OptionSelectProps<T extends string> {
 export function OptionSelect<T extends string>({ label, value, className, onChange, ...rest }: OptionSelectProps<T>) {
   return (
     <Select value={value} disabled={rest.disabled} onValueChange={(next) => onChange(next as T)}>
-      <SelectTrigger aria-label={label} className={className}>
+      <SelectTrigger id={rest.id} aria-label={label} className={className}>
         <SelectValue />
       </SelectTrigger>
       <OptionList options={rest.options} format={rest.format ?? String} />

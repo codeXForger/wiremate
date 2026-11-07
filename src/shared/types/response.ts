@@ -1,3 +1,4 @@
+import type { KafkaRecordMeta } from './kafka'
 import type { KeyValue } from './protocol'
 import type { TestResult } from './scripting'
 
@@ -31,6 +32,8 @@ export interface StreamEvent {
   peer?: string
   /** The raw bytes, when the event carried binary data; `data` holds them decoded as UTF-8. */
   bytes?: Uint8Array
+  /** A Kafka record's topic, partition, offset, key and headers; `bytes` holds its value. */
+  record?: KafkaRecordMeta
 }
 
 export interface StreamSession {
@@ -41,6 +44,8 @@ export interface StreamSession {
   connecting?: boolean
   /** Who the session talks to: a server's clients, or the hosts a UDP socket heard from. */
   peers?: string[]
+  /** Shown instead of the connection state, for a log that is not a connection (Kafka admin activity). */
+  label?: string
 }
 
 export type ResponseState = ExchangeResponse | StreamSession

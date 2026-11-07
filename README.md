@@ -105,6 +105,20 @@ shows live progress, passed and failed requests and tests, and timings. **Stop**
 skips the rest. Every run is saved to the suite's
 **History**, and **Download PDF** saves any finished run as a printable report.
 
+## Kafka
+
+The **Kafka** section talks to a real cluster (`localhost:9092` by default; SASL PLAIN/SCRAM and TLS under
+**Connection**). A Kafka request is one of three things:
+
+- **Producer**: connect, then send records with a key, headers and an optional partition. Acks, compression and
+  idempotence are under **Options**.
+- **Consumer**: reads one or more topics in a consumer group, from the latest, the earliest, the group's committed
+  offsets or a point in time. It commits as records arrive, and can stop after a number of records.
+- **Admin**: topics (create, add partitions, edit configs, delete records before an offset, delete), consumer groups
+  (members, committed offsets and lag, reset offsets, delete offsets or the group) and the cluster's brokers.
+
+For a local broker: `docker run -d --name wiremate-kafka -p 9092:9092 apache/kafka:4.1.0`.
+
 ## Scripts
 
 | Script             | What it does                                                     |

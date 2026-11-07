@@ -3,22 +3,13 @@ import { errorMessage } from '@shared/scripting/describe'
 import { interpolate } from '@shared/utils/interpolate'
 import { encodePayload } from '@shared/utils/payload'
 import { SocketService } from '@/services/socket-service'
-import { useResponseStore } from '@/stores/response-store'
+import { streamSessionStore } from '@/stores/response-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { activeVariables } from '../../environments/active-variables'
 import { socketSpec, type SocketRequest } from './socket-spec'
 
 /** The sockets of every TCP and UDP request; their sessions show in the response store. */
-export const socketSessions = new SocketService({
-  bridge: () => window.wiremate,
-  store: {
-    get: (requestId) => {
-      const response = useResponseStore.getState().responses[requestId]
-      return response?.kind === 'stream' ? response : undefined
-    },
-    set: (requestId, session) => useResponseStore.getState().setResponse(requestId, session)
-  }
-})
+export const socketSessions = new SocketService({ bridge: () => window.wiremate, store: streamSessionStore })
 
 export interface SocketActions {
   open: () => void
@@ -37,7 +28,7 @@ function sendPayload(requestId: string, to?: string): void {
   if (!request) return
   try {
     const payload = interpolate(request.config.payload, activeVariables())
-    void socketSessions.send(requestId, encodePayload({ ...request.config, payload }), to)
+    void socketSessions.sendBytes(requestId, encodePayload({ ...request.config, payload }), to)
   } catch (error) {
     socketSessions.report(requestId, errorMessage(error))
   }

@@ -141,12 +141,66 @@ export interface RabbitMqConfig {
   message: string
 }
 
-export interface KafkaConfig {
+export const KAFKA_MODES = ['producer', 'consumer', 'admin'] as const
+export type KafkaMode = (typeof KAFKA_MODES)[number]
+
+export const KAFKA_AUTH_MECHANISMS = ['none', 'PLAIN', 'SCRAM-SHA-256', 'SCRAM-SHA-512'] as const
+export type KafkaAuthMechanism = (typeof KAFKA_AUTH_MECHANISMS)[number]
+
+/** How many replicas confirm a write before the producer hears it worked. */
+export const KAFKA_ACKS = ['all', 'leader', 'none'] as const
+export type KafkaAcks = (typeof KAFKA_ACKS)[number]
+
+export const KAFKA_COMPRESSIONS = ['none', 'gzip', 'snappy', 'lz4', 'zstd'] as const
+export type KafkaCompression = (typeof KAFKA_COMPRESSIONS)[number]
+
+/** Where a consumer starts reading: the newest records, the oldest, its group's committed offsets, or a time. */
+export const KAFKA_START_POSITIONS = ['latest', 'earliest', 'committed', 'timestamp'] as const
+export type KafkaStartPosition = (typeof KAFKA_START_POSITIONS)[number]
+
+/** How to reach a cluster: what every producer, consumer and admin client needs. */
+export interface KafkaConnection {
+  /** Bootstrap brokers, comma separated: `host:9092,host:9093`. */
   brokers: string
+  clientId: string
+  auth: KafkaAuthMechanism
+  username: string
+  password: string
+  /** Connects over TLS. */
+  ssl: boolean
+}
+
+export interface KafkaProducerSettings {
+  acks: KafkaAcks
+  compression: KafkaCompression
+  /** Lets the broker drop duplicates of a retried write. Needs acks "all". */
+  idempotent: boolean
+}
+
+export interface KafkaConsumerSettings {
+  startFrom: KafkaStartPosition
+  /** Where `timestamp` starts: a date and time, or epoch milliseconds. */
+  startTimestamp: string
+  autoCommit: boolean
+  /** Reads only records of committed transactions. */
+  readCommitted: boolean
+  sessionTimeoutMs: number
+  /** How long the broker may hold a fetch while it waits for records. */
+  maxWaitMs: number
+  /** Stops after this many records; 0 never does. */
+  maxMessages: number
+}
+
+export interface KafkaConfig extends KafkaConnection, KafkaProducerSettings, KafkaConsumerSettings {
+  mode: KafkaMode
+  /** The producer's topic; a consumer takes a comma-separated list. */
   topic: string
   groupId: string
   key: string
   value: string
+  headers: KeyValue[]
+  /** The producer's target partition; empty lets the partitioner choose. */
+  partition: string
 }
 
 export const MQTT_QOS_LEVELS = ['0', '1', '2'] as const

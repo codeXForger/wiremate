@@ -2,8 +2,9 @@ import { parseWholeNumber } from '@shared/utils/payload'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Field } from '../../request/components/Field'
-import type { Bound } from '../../request/use-field-binder'
+import type { Bound } from '../use-field-binder'
+import { Field } from './Field'
+import { OptionSelect } from './OptionSelect'
 
 const MAX_PORT = 65_535
 const MAX_NUMBER = 2 ** 31 - 1
@@ -51,5 +52,20 @@ export function SwitchField({ id, label, value, onChange }: Bound<boolean> & { i
       <Switch id={id} checked={value} onCheckedChange={onChange} />
       <Label htmlFor={id}>{label}</Label>
     </div>
+  )
+}
+
+interface SelectFieldProps<T extends string> extends Bound<T> {
+  id: string
+  label: string
+  options: readonly T[]
+  format?: (option: T) => string
+}
+
+export function SelectField<T extends string>({ id, label, ...select }: SelectFieldProps<T>) {
+  return (
+    <Field label={label} htmlFor={id}>
+      <OptionSelect id={id} label={label} className="text-xs" {...select} />
+    </Field>
   )
 }

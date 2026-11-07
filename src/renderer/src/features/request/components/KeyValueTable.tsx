@@ -22,7 +22,7 @@ export function KeyValueTable({ label, value: rows, onChange, highlightVariables
       {rows.map((row) => (
         <KeyValueRow key={row.id} {...{ label, row, onChange, highlightVariables }} value={rows} />
       ))}
-      <Button variant="ghost" size="sm" className="self-start" onClick={add}>
+      <Button type="button" variant="ghost" size="sm" className="self-start" onClick={add}>
         <Plus /> Add {label.toLowerCase()}
       </Button>
     </div>
@@ -76,7 +76,7 @@ function CellInput({ label, value, onChange, highlight }: CellInputProps) {
 
 function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
   return (
-    <Button variant="ghost" size="icon" aria-label={`Remove ${name}`} onClick={onRemove}>
+    <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${name}`} onClick={onRemove}>
       <X />
     </Button>
   )

@@ -1,6 +1,6 @@
 import type { StreamSession } from '@shared/types/response'
 import { formatAddress } from '@shared/utils/payload'
-import { useResponseStore } from '@/stores/response-store'
+import { streamSessionStore } from '@/stores/response-store'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { DeleteConfirmation } from '@/stores/ui-store'
 import { socketSessions } from './socket-actions'
@@ -18,11 +18,6 @@ function describeSocket({ name, protocol, config }: SocketRequest, session: Stre
   return `"${name}" is connected to ${formatAddress(config.host, config.port)}.`
 }
 
-function sessionOf(requestId: string): StreamSession | undefined {
-  const response = useResponseStore.getState().responses[requestId]
-  return response?.kind === 'stream' ? response : undefined
-}
-
 /**
  * The confirmation to show before closing a request whose socket is open, or null when nothing is open. Confirming
  * closes the socket, so its peers see the connection end, then runs `then`.
@@ -33,7 +28,7 @@ export function socketCloseConfirmation(requestId: string, then: () => void): De
   if (!open) return null
   return {
     title: 'Close the connection?',
-    message: describeSocket(request, sessionOf(requestId)),
+    message: describeSocket(request, streamSessionStore.get(requestId)),
     note: 'Closing the tab disconnects it.',
     confirmLabel: 'Disconnect and close',
     onConfirm: () => {

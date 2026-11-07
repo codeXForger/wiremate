@@ -40,6 +40,11 @@ export function createWireMateStub(overrides: Partial<WireMateApi> = {}): WireMa
     sendSocket: vi.fn().mockResolvedValue(undefined),
     closeSocket: vi.fn().mockResolvedValue(undefined),
     onSocketEvent: vi.fn(() => () => undefined),
+    openKafka: vi.fn().mockResolvedValue(undefined),
+    produceKafka: vi.fn().mockResolvedValue(undefined),
+    closeKafka: vi.fn().mockResolvedValue(undefined),
+    onKafkaEvent: vi.fn(() => () => undefined),
+    kafkaAdmin: vi.fn().mockResolvedValue({ ok: false, error: 'No cluster in tests' }),
     ...overrides
   }
 }

@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { App } from '@/app/App'
+import { useAdminStore } from '@/features/protocols/kafka/admin/admin-store'
 import { demoSeed } from './seed'
 import { useConsoleStore } from '@/stores/console-store'
 import { useResponseStore } from '@/stores/response-store'
@@ -33,6 +34,7 @@ export function resetStores({ keepStorage = false } = {}): void {
   useSuiteStore.setState(useSuiteStore.getInitialState(), true)
   useMessageStore.setState(useMessageStore.getInitialState(), true)
   useToastStore.setState(useToastStore.getInitialState(), true)
+  useAdminStore.setState(useAdminStore.getInitialState(), true)
   saveQueue.clear()
   saveQueue.delayMs = TEST_SAVE_DELAY_MS
   if (keepStorage) return

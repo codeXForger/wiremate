@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ResponseState } from '@shared/types/response'
+import type { ResponseState, StreamSession } from '@shared/types/response'
 
 interface ResponseStoreState {
   responses: Record<string, ResponseState>
@@ -24,3 +24,14 @@ export const useResponseStore = create<ResponseStoreState>()((set, get) => ({
     set({ responses: rest })
   }
 }))
+
+function streamSessionOf(requestId: string): StreamSession | undefined {
+  const response = useResponseStore.getState().responses[requestId]
+  return response?.kind === 'stream' ? response : undefined
+}
+
+/** Live sessions (sockets, Kafka clients) show in the response store, by request id. */
+export const streamSessionStore = {
+  get: streamSessionOf,
+  set: (requestId: string, session: StreamSession): void => useResponseStore.getState().setResponse(requestId, session)
+}

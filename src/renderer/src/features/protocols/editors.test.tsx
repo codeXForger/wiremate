@@ -145,7 +145,6 @@ describe('streaming editors', () => {
   it.each([
     { section: 'Realtime', protocol: 'Socket.IO', field: 'Event name', value: 'chat' },
     { section: 'Pub/Sub', protocol: 'RabbitMQ', field: 'Routing key', value: 'orders.created' },
-    { section: 'Kafka', protocol: 'Kafka', field: 'Topic', value: 'orders' },
     { section: 'MQTT', protocol: 'MQTT', field: 'Topic', value: 'home/+/temp' }
   ])('binds spec fields in $section for $protocol', async ({ section, protocol, field, value }) => {
     const { user } = await renderApp()
